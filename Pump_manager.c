@@ -20,6 +20,11 @@ BYTE GetPumpStat()
     return TRUE;
 }
 
+BYTE GetCurPumpStat(BYTE idx)
+{
+    return pumpAsVlv[idx].IsPumpOpen;
+}
+
 void CheckPumpFitStatus()
 {
     BYTE i;
@@ -91,7 +96,7 @@ void CloseMainPump(BYTE pmpIdx, int bForceClose)
     #ifdef DebugMode
     SendDebugMsg("\r\nClose Main Pump \0");
     #endif DebugMode   
-    if (pmpIdx == 0) 
+//    if (pmpIdx == 0) 
     if (OpenCloseMainPump(pmpIdx, 4, PUMP_CMD_OFF) == 1)
         pumpAsVlv[pmpIdx].IsPumpOpen = FALSE;   
 }

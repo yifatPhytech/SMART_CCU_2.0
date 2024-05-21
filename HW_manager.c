@@ -34,7 +34,7 @@ extern BYTE g_nTime2StartAT;
 extern BYTE bEndOfCbuTask;
 extern BYTE nRegDenied;
 extern BYTE btrStatus;
-extern char ComBuf[MAX_SBD_BUF_LEN];
+extern char ComBuf[MAX_RX1_BUF_LEN];
 extern int nTimeCnt;
 extern int iVoltage;
 extern int BytesToSend;
@@ -44,7 +44,7 @@ extern int BytesToSend;
 void putchar1(char c)
 {
     #ifdef DebugMode
-    if ((mainTask == TASK_EZR_COM) || (mainTask == TASK_EZR))
+    if ((mainTask == TASK_EZR_COM))// || (mainTask == TASK_EZR))
         return;  
     if (mainTask != TASK_BRIDGE)   
         UART1Select(UART_DBG);   
@@ -108,9 +108,10 @@ void PrintSensorDef()
 void HandleLed(BYTE nLedIndex, BYTE ledCmd)
 {
     int ledStat = 0;   
-     if (bExtReset == FALSE)
-        return;
-//    ledStat = (ledCmd | (nLedIndex << 8));  
+    if (bExtReset == FALSE)
+        return;         
+    if (IsZeroID(AppEepromData.eLoggerID))
+        return;  
     ledStat = (nLedIndex | (ledCmd << 8));  
     SendRecRS485(CMD_LED, ledStat);
 }
@@ -323,18 +324,12 @@ void GetNextMainTask()
             bEndOfMonitorTask = FALSE;
         }
                                           
-//    if (prevMainTask != TASK_NONE)  
-    {
-        bWaitForModemAnswer = FALSE;
-        bCheckRxBuf = FALSE;
-        bNeedToWait4Answer = TRUE;
-    }
+    bWaitForModemAnswer = FALSE;
+    bCheckRxBuf = FALSE;
+    bNeedToWait4Answer = TRUE;
     bWaitForMonitorCmd = FALSE;
     bCheckRx1Buf = FALSE;
     nTimeCnt = 0;      
-//    g_cmdSndCnt = 0;     
-//    gOpenPumpDelay = 0;       
-//    gClosePumpDelay = 0;
     g_PumpCmdNow = PUMP_NONE; 
     g_bHighPrio = FALSE;             
 }
@@ -621,7 +616,6 @@ PCIFR=(0<<PCIF3) | (0<<PCIF2) | (1<<PCIF1) | (0<<PCIF0);
 //        ShutDownModem();
 //    }
     bMonitorConnected = FALSE;
-    HandleLed(LED_ALL, CBU_LED_OFF);
 
     btrStatus = BTR_STATUS_EMPTY;   //SHUTDOUW;
     g_fRS485Call = 0;    
@@ -634,7 +628,9 @@ PCIFR=(0<<PCIF3) | (0<<PCIF2) | (1<<PCIF1) | (0<<PCIF0);
     LoadVCUIds();       
     InitOperatorLst();
     g_bVlvListUpdated = true;
-    ResetEzrVerNum();      
+    ResetEzrVerNum();    
+    HandleLed(LED_ALL, CBU_LED_OFF);   
+    delay_ms(20); 
     HandleLed(LED_1, CBU_LED_BLINK);
 }
 
@@ -674,7 +670,7 @@ void PrintNum(long val)
 {
     char s[10];
     BYTE i = 0;
-    if ((mainTask == TASK_EZR_COM)|| (mainTask == TASK_EZR))
+    if ((mainTask == TASK_EZR_COM)) //|| (mainTask == TASK_EZR))
         return;
     if (val < 0)
     {
@@ -699,13 +695,13 @@ void PrintNum(long val)
 void SendDebugMsg(flash unsigned char *bufToSend)
 {
     int i;
-    if ((mainTask == TASK_EZR_COM) || (mainTask == TASK_EZR))
+    if ((mainTask == TASK_EZR_COM))// || (mainTask == TASK_EZR))
         return;
     if (UART1Select(UART_DBG) == 1)
         delay_ms(30);//50
     i = 0;
     //copy flash string to buff
-    while ((bufToSend[i] != '\0') && (i < MAX_SBD_BUF_LEN))
+    while ((bufToSend[i] != '\0') && (i < MAX_RX1_BUF_LEN))
     {
          DbgBuf[i] = bufToSend[i];
          //putchar1(ComBuf[i]);

@@ -26,7 +26,7 @@
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char ANSWER_ACK[] = "ACKACKACK@";
-static BYTE nBadAnswer;
+static BYTE nBadAnswer = 0;
 static BYTE nCycles;
 static BYTE nParseAns;
 static BYTE fGotData;
@@ -36,19 +36,15 @@ static BYTE nNoDataCnt = 0;
 
 extern bit bWait4WLSensor;
 bool bEndOfMeasureTask;
-//extern BYTE g_bCntnIrr;
 extern BYTE msrCurTask;
 extern BYTE g_bHighPrio;
 #ifdef DebugMode
 extern volatile BYTE mainTask;
 #endif DebugMode
 extern BYTE flgUart1Error;
-//extern BYTE g_bStartLsnEzr;
-//extern unsigned int nCntDown;
-//extern unsigned int objToMsr;
 extern int BytesToSend;
 extern int nTimeCnt;
-extern char ComBuf[MAX_SBD_BUF_LEN];
+extern char ComBuf[MAX_RX1_BUF_LEN];
 
 void InitEZRCom()
 {
@@ -63,7 +59,7 @@ void InitEZRCom()
     // reset buffer
     ResetUart1();
     fGotData = 0;
-    nBadAnswer = 0;
+//    nBadAnswer = 0;
     nCycles = 0;           
 }
 
@@ -210,9 +206,9 @@ void SavePhytechData()
     unsigned long lID;  
 
 //todo - remove
-     #ifdef DebugMode
-    mainTask = TASK_MONITOR;   
-    #endif DebugMode
+//    #ifdef DebugMode
+//    mainTask = TASK_MONITOR;   
+//    #endif DebugMode
     GetRealTime(); 
     i = 0;
     while ((RxUart1Buf[i] != 0xAB) && (RxUart1Buf[i] != 0xAC) &&  (i < buffLen))
@@ -302,7 +298,9 @@ void SavePhytechData()
 //    if (openPump != 0)
 //        CheckVCUStatus();
     // todo - remove
-    mainTask = TASK_EZR_COM;
+//     #ifdef DebugMode
+//    mainTask = TASK_EZR_COM;
+//    #endif DebugMode
 }
 
 
@@ -418,7 +416,8 @@ bool MeasureMain()
            if (nParseAns == TRUE)
             {                      
                 nNoDataCnt = 0;
-                nCycles = 0;
+                nCycles = 0;    
+                nBadAnswer = 0;
                 AnswerReceiver();   
                 SavePhytechData();  
             }   
@@ -435,7 +434,7 @@ bool MeasureMain()
             msrCurTask = TASK_NONE;
             bEndOfMeasureTask = true;
             bWait4WLSensor = FALSE;
-             if ((nCycles > 3) || (nBadAnswer > 3) || (nNoDataCnt > 60))  
+             if (/*(nCycles > 3) ||*/  (nBadAnswer > 10) ||(nNoDataCnt > 60))       // todo - check if need
              {
                 ResetEZR();     
                 nNoDataCnt = 0;

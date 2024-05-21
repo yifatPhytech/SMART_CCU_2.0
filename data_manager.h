@@ -4,7 +4,19 @@
 #define SEND_VCU    4
 #define SEND_CMPNT  8
 
-
+typedef struct
+{
+    unsigned int    pVCUDataWrite;
+    unsigned int    pVCUDataRead;
+    unsigned int    pPmpActionWrite;
+    unsigned int    pPmpActionRead;
+    unsigned int    pCmpsDataWrite;
+    unsigned int    pCmpsDataRead;
+    unsigned int    pAlertWrite;
+    unsigned int    pAlertRead;  
+    BYTE            pVCUDataOverlap;
+    BYTE            pCmpsDataOverlap;
+} _ExtEpromPointers;
 /////////////////////////////////////////////
 // Data_manager functions
 ////////////////////////////////////////////
@@ -30,7 +42,7 @@ BYTE ValidatePointers();
 
 BYTE GetNextEprom2Send(BYTE prevPost);
 
-BYTE GetEpromPcktCnt(BYTE nType);
+int GetEpromPcktCnt(BYTE nType);
 
 BYTE ReadPacket(BYTE nPacketType);
 

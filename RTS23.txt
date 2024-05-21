@@ -111,6 +111,32 @@
 07/02/2024  sync with new CBU. 5 ports & 2 flow. minutly messag also changed.
 11/01/2024  CheckPumpFitStatus - aftr gets minutly data from CBU & EZR - chck if pump status fits, but only if iiit hasn't changd now.
 12/02/2024  add leds via CBU.  
+            2.24.20
+
+21/05/2024	1. GetNextEprom2Send - put alert before CBU data
+			2. add IsAT function to find answer from modem when trying to configure modem baudrate.
+			3. FOTA - if FW to upgrade is 0 - quit
+            4. SendPostMsg - calc number of messages in single post inside the function. send maximum 20 messages in each post.
+            - InitWritPntr - init both read &write pointers if they are equal
+            - ReadPacket - do not init read pointers when it reachs the write pointer 
+            - change external eeprom memory allocation
+            - GetNextEprom2Send - change condition to <= instead of <               
+            - data manager - when adding to any of the write pointers - make sure it doesnt skip its writing limits.  
+            - define "END" address to each of writing sector and check it in ValidatePointers func.      
+            - set pointers structure size to 16: add 2 flags to eprmPonter - to sign if write pointer reachs end of section and starts from beggining again.
+                in case it does - change the calculation of data should be sent to server. 
+            - in case read pointer reachs end of section - put it back to start.   
+            - ResetPointers - reset also overlap vars   
+            5. save "6" as command confirmation when gets pump command.
+            6. few fits for monitoring - 1> send CBU version when ask to. 2> after connecting - get back to monitor
+            7. add route of cooling task to getBulkCoolingTask, in order to get few tasks at once. adjust ParseValveCommandsWithDelay to it. , not in use yet 
+            8. remove TASK_EZR
+            9. nextCmd - var instead of pointer
+            10. reset EZR if hasnt got data for an hour or nBadAnswer - init it when parse is ok, increase when failed. after 10 times failed in a row - reset EZR. 
+            11. if get task command 8 - reset CBU - send reset command to CBU
+            U.5.24.20
+            
+             
 
                                                              
 

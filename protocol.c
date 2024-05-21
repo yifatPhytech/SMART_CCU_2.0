@@ -14,7 +14,7 @@ extern eeprom _tagAPPEEPROM AppEepromData;
 extern flash unsigned char fEZRUpdateAddress[];
 extern int nTimeCnt;
 extern bit bWait4WLSensor;
-extern char ComBuf[MAX_SBD_BUF_LEN];
+extern char ComBuf[MAX_RX1_BUF_LEN];
 extern int BytesToSend;
 //extern unsigned int buffLen;
 extern unsigned int nEzrFw2Upg;

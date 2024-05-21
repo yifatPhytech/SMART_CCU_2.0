@@ -18,8 +18,8 @@
 //#define NOT_ONLY_LIST
 
 #define MAX_SEND_EZR_RETRY  2
-#define MIN_DELAY_PUMP  (signed char)(-120)
-#define MAX_DELAY_PUMP  (signed char)120
+//#define MIN_DELAY_PUMP  (signed char)(-120)
+//#define MAX_DELAY_PUMP  (signed char)120
 
 // command type
 //#define CMD_NONE        0   
@@ -34,10 +34,10 @@
 //#define STATUS_CONFIRMED   3
 
 //valve status
-#define STATUS_VCU_ON      1
-#define STATUS_VCU_OFF     0
-#define STATUS_WAIT_2_START       2   
-#define STATUS_WAIT_2_STOP       3   
+#define STATUS_VCU_OFF          0
+#define STATUS_VCU_ON           1
+#define STATUS_WAIT_2_START     2   
+//#define STATUS_WAIT_2_START_ON  3   
 
 // valve extended parameters
 #define EXT_START_NOW   1
@@ -112,10 +112,10 @@ void CloseValve(BYTE index)
 //    vlvCmdArr[index].offTime = 0;
 //    vlvCmdArr[index].cycles = 0;
 //    vlvCmdArr[index].index = 0;
-    if (vlvCmdArr[index].nextIrg == NULL)   //.iDuration == 0)  
+    if (vlvCmdArr[index].nextIrg.iDuration == 0)    //if (vlvCmdArr[index].nextIrg == NULL) 
         return;
       
-    vlvCmdArr[index].cmdData = *vlvCmdArr[index].nextIrg;
+    vlvCmdArr[index].cmdData = vlvCmdArr[index].nextIrg;
 //    vlvCmdArr[index].iDuration = vlvCmdArr[index].nextIrg->iDuration;
 //    vlvCmdArr[index].startTime = vlvCmdArr[index].nextIrg->startTime;     
     vlvCmdArr[index].cmdStatus = STATUS_CMD_IN;   
@@ -124,8 +124,8 @@ void CloseValve(BYTE index)
     SendDebugMsg("set next irrigation in \0");
     PrintNum(vlvCmdArr[index].nSec2Start);  
     #endif DebugMode 
-   free(vlvCmdArr[index].nextIrg);
-   vlvCmdArr[index].nextIrg = NULL;//.iDuration = 0;
+//    free(vlvCmdArr[index].nextIrg);
+    vlvCmdArr[index].nextIrg.iDuration = 0; // = NULL;//
 }
 
 void CloseAllValve()
@@ -150,7 +150,7 @@ void InitVlvCmd(BYTE i)
     vlvCmdArr[i].cmdStatus = STATUS_IDLE;   
     vlvCmdArr[i].vlvStatus = STATUS_VCU_OFF;   
     vlvCmdArr[i].nSec2Start = 0;  
-    vlvCmdArr[i].nextIrg = NULL;    //.iDuration = 0;//NULL;
+    vlvCmdArr[i].nextIrg.iDuration = 0; // = NULL;   
     vlvCmdArr[i].iExtPrm = 0;
 }
 
@@ -824,37 +824,20 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
         #ifdef DebugMode  
         SendDebugMsg("\r\nnext Irg \0");
         #endif DebugMode 
-        if (vlvCmdArr[index].nextIrg == NULL)   
-        {
-//            #ifdef DebugMode  
-//            SendDebugMsg("\r\nsizeof(CommandData)= \0");
-//            PrintNum(sizeof(CommandData));  
-//            #endif DebugMode 
-            vlvCmdArr[index].nextIrg = (CommandData*)malloc(sizeof(CommandData));       
-        }
-        if (vlvCmdArr[index].nextIrg != NULL)
-        { 
-            vlvCmdArr[index].nextIrg->iDuration = dur;
-            vlvCmdArr[index].nextIrg->startTime = t;   
-            vlvCmdArr[index].nextIrg->offTime = offTime;    
-            vlvCmdArr[index].nextIrg->cycles = cycles;    
-            vlvCmdArr[index].nextIrg->index = cmdIndex;            //vlvCmdArr[index].nextIrg = pNxtIrg;
+
+            vlvCmdArr[index].nextIrg.iDuration = dur;
+            vlvCmdArr[index].nextIrg.startTime = t;   
+            vlvCmdArr[index].nextIrg.offTime = offTime;    
+            vlvCmdArr[index].nextIrg.cycles = cycles;    
+            vlvCmdArr[index].nextIrg.index = cmdIndex;          
             #ifdef DebugMode  
             SendDebugMsg("\r\nsetup next irrigation\0");
             #endif DebugMode     
-        }  
-        else
-        {
-            #ifdef DebugMode  
-            SendDebugMsg("\r\nallocate mem fail\0");
-            #endif DebugMode     
-        }
-    }
-    #ifdef ValveDebug    
-    putchar1('I');   
-    PrintNum(id);
-    PrintNum(dur);        
-    #endif ValveDebug  
+    }  
+
+//    if (index == MAX_CMD)  
+//        SavePumpActionData(6, 1, cmdIndex);      
+
     return index;
 }
 

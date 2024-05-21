@@ -34,17 +34,12 @@ typedef struct _ValveUnit
 {
     unsigned long   VCU_ID; 
     CommandData     cmdData; 
-//    unsigned int    iDuration;   
-//    BYTE            offTime;    
-//    BYTE            cycles;    
-//    BYTE            index;    
-//    Time            startTime;  
     BYTE            cmdStatus;    
     BYTE            vlvStatus;    
     unsigned long   nSec2Start; 
     BYTE            iExtPrm;
     DateTime        stopTimeStamp;     
-    CommandData*    nextIrg;
+    CommandData    nextIrg;
 }ValveUnit;
 
 //extern BYTE     g_bMainPumpOpen ;

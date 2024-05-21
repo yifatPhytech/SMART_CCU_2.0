@@ -50,9 +50,9 @@ BYTE    g_bAfterModem;
 BYTE g_nTime2StartAT;
 unsigned char powerOnReset;
 DateTime g_LastCnctTime;
-char DataBlock[VCU_PACKET_SIZE];
-volatile unsigned char eepromReadBuf[EEPROM_READ_BUF_LEN];  //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
-char ComBuf[MAX_SBD_BUF_LEN]; // buffer for transmit (TX)
+char DataBlock[MAX_DATA_2_EPRM_SIZE];
+volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];  //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
+char ComBuf[MAX_RX1_BUF_LEN]; // buffer for transmit (TX)
 //char DbgBuf[50]; // buffer for debug
 unsigned int nEzrFw2Upg = 0;
 unsigned int nCBUFw2Upg = 0;

@@ -117,11 +117,15 @@
 #define COMMAND_INIT_MEM_SENSORS    5
 #define COMMAND_GET_VLV_LST     6
 #define COMMAND_OPEN_PUMP       7
+#define COMMAND_RST_CBU         8
 
 #define ALL_VLV_COMMAND_PING    99
 #define ALL_VLV_COMMAND_RST     98
 #define ALL_VLV_COMMAND_TEST    97
 #define ALL_VLV_COMMAND_STOP    94
+
+#define MAX_BAUD_RATE_OPTIONS  7
+#define SEC_4_GSM_IGNITION  1
 
 typedef struct 
 {
@@ -161,7 +165,7 @@ BYTE UpdatePrmArr[MAX_PRM_TASKS];
 extern DateTime g_LastCnctTime;
 extern char DataBlock[];
 extern char clockBuf[7]; 		 //buffer for all clock operation need
-extern char ComBuf[MAX_SBD_BUF_LEN];
+extern char ComBuf[MAX_RX1_BUF_LEN];
 int nMaxWaitingTime;
 extern int iVoltage;
 extern int nTimeCnt;
@@ -225,7 +229,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',2, YEAR, 20};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',5, YEAR, 20};   //__BUILD__
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 
@@ -256,8 +260,6 @@ flash unsigned char  AT_CSQ[] = "AT+CSQ\r\n\0";               //8 bytes  AT+GMR-
 flash unsigned char  AT_EOD[] = "+++\0";               //8 bytes  AT+GMR-returns the software revision identification
 flash unsigned char  AT_QSS[] = "AT+QSIMSTAT?\r\n\0"; //"AT#QSS?\r\n\0";   
 flash unsigned char AT_CCID[] = "AT+QCCID\r\n\0";       //"AT#CCID\r\n\0";
-//flash unsigned char AT_CCID[] = "AT+QCFG=\"nwscanmode\",3,1\r\n\0";
-//flash unsigned char AT_CGMM[] = "AT+GMM\r\n\0";
 flash unsigned char AT_PWROFF[] = "AT+QPOWD\r\n\0";
 //GPRS connecting commands:
 flash unsigned char GPRS_ATTACH[] = "AT+CGATT=1\r\n\0";                               //12
@@ -284,6 +286,7 @@ flash unsigned char AT_POST_TITLE_PRM[] = "POST /api/sensor/loggerparamscs HTTP/
 //flash unsigned char AT_POST_TITLE_VLV_V1[] = "POST /api/sensor/SensorValvUpdate HTTP/1.1\r\n#";  //                 
 //flash unsigned char AT_POST_TITLE_VLV[] = "POST /api/sensor/getValvTaskV2 HTTP/1.1\r\n#";  //    
 flash unsigned char AT_POST_TITLE_VLV[] = "POST /api/sensor/getCoolingTask HTTP/1.1\r\n#";  //    
+//flash unsigned char AT_POST_TITLE_VLV[] = "POST /api/sensor/getBulkCoolingTask HTTP/1.1\r\n#";  //       
 #ifdef SMART_SERVER 
 flash unsigned char AT_POST_TITLE_CBU_DATA[] = "POST /data HTTP/1.1\r\n#";  //
 #else
@@ -329,7 +332,6 @@ flash unsigned char AT_POST_FILE_HDR_VCU_LIST[] = "filename=\"VCULIST.txt\"\r\n#
 flash unsigned char AT_POST_FILE_HDR2[] = "Content-Type: text/plain\r\n\r\n#";          //28
 //flash unsigned char BACKUP_URL[] = "54.246.50.57#0000000000000000000"; //"63.34.115.252#000000000000000000";//"proxy.backup.phytech.com#0000000";
 //flash unsigned char BACKUP_URL_LTE[] = "54.246.50.57#0000000000000000000";  // "63.34.115.252#000000000000000000";//"54.246.85.255#000000000000000000";;
-//flash unsigned char MODEM_4D_MODEL[] = "LE910-SVL";
 
 BYTE SendRecATCmd(flash unsigned char *bufToSend, BYTE tOut);
 
@@ -421,7 +423,7 @@ void SendATCmd(flash unsigned char *bufToSend, int nWait4Answer, BYTE nRetry)
 
     i = 0;
     //copy flash string to buff
-    while ((bufToSend[i] != cEndMark) && (i < MAX_SBD_BUF_LEN))
+    while ((bufToSend[i] != cEndMark) && (i < MAX_RX1_BUF_LEN))
     {
          ComBuf[i] = bufToSend[i];
          i++;
@@ -556,9 +558,8 @@ void BuildAlertBuff()
     cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eLoggerID[0], 4);
     index += 4;                      
     
-    // CBU ID   todo - add
+    // CBU ID   
     cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eCbuGlblData[0], 4);
-//    MemCopy( &ComBuf[index], &DataBlock[1], 4);
     index += 4;
 
     // Timestamp  + values
@@ -596,8 +597,8 @@ void BuildCBUDataBuff()
     index += 4;
 
     // Timestamp  + values
-    memcpy(&ComBuf[index],&DataBlock[0], COMPONENT_PACKET_SIZE);
-    index += (COMPONENT_PACKET_SIZE - 1);      
+    memcpy(&ComBuf[index],&DataBlock[0], CBU_MNT_DATA_SIZE);
+    index += (CBU_MNT_DATA_SIZE - 1);      
     
      //check sum
     cs = CheckSum(ComBuf, index, 1);      
@@ -711,143 +712,6 @@ void BuildVCUDataStr()
     BytesToSend = index;
 }
 
-/*void BuildDataStr()
-{
-    int index = 0;
-    BYTE i, cs;
-    int n;//, resetData = 0xff7f;      
-    float_bytes tmp;     
-
-//    index = 0;      
-    // ID
-    MemCopy( &ComBuf[index], &DataBlock[5], 4);
-    index += 4;
-
-    //Type        status     
-    ComBuf[index++] = 180;  //DataBlock[10];     // set id of type
-
-    // send logger ID
-    cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eLoggerID[0], 4);
-    index += 4;   
-    
-    //rssi               
-    ComBuf[index++] = DataBlock[11];
-    
-    // btr
-    ComBuf[index++] = DataBlock[9];
-    ComBuf[index++] = DataBlock[10];
-                                           
-    // time
-    memcpy(&ComBuf[index],&DataBlock[0], 5);
-    index += 5;
-  
-    // first data - Situation      
-    n = DataBlock[12];
-    int2bytes(n, &ComBuf[index]);     
-    index += 2;
-    // 2nd data - valve status   
-    n = DataBlock[13];
-    int2bytes(n, &ComBuf[index]);     
-    index += 2;
-               
-    // add another 6 data
-    for (i = 0; i < 6; i++)
-    {
-        memcpy(tmp.bVal, &DataBlock[14 + i*4], 4);
-        n = (int)tmp.fVal;
-        int2bytes(n, &ComBuf[index + i*2 ]);  
-    }  
-  
-    index += 12;      
-    //check sum
-    cs = CheckSum(ComBuf, index, 1);
-    ComBuf[index++] = cs;
-
-    ComBuf[index++] = '\r';
-    ComBuf[index++] = '\n';
-    BytesToSend = index;
-}   */
-
-/*
-void BuildPumpBuff()
-{
-    int index = 0;
-    BYTE cs;
-
-    // CCU ID
-//    cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eLoggerID[0], 4);
-    ULong2Bytes(1000, &ComBuf[index]);//, &pumpData, 4);
-    index += 4;                      
-    
-    // CBU ID   todo - add
-    cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eLoggerID[0], 4);
-    index += 4;
-        
-    // 0
-    cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eCbuGlblData[0], 4);
-    index += 4;
-
-    // Timestamp  + values
-    memcpy(&ComBuf[index],&DataBlock[0], ALERTS_MEMORY_PACKET_SIZE);
-    index += PUMP_ACTION_PACKET_SIZE;      
-    
-     //check sum
-    cs = CheckSum(ComBuf, index, 1);      
-    ComBuf[index++] = cs;
-
-    ComBuf[index++] = '\r';
-    ComBuf[index++] = '\n';
-    BytesToSend = index;
-}           */
-
-/*void BuildPumpBuff()
-{
-    int index = 0;
-    BYTE i, cs;   
-    int noData = 0xff7f;       
-    
-    //cbu id
-    cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eCbuGlblData[0], 4);
-    index += 4;    
-    
-    //Type        status     
-    ComBuf[index++] = 204;
-
-    // send logger ID
-    cpu_e2_to_MemCopy( &ComBuf[index], &AppEepromData.eLoggerID[0], 4);
-    index += 4;   
-    
-    //rssi               
-    ComBuf[index++] = 0;
-    
-    // btr
-    ComBuf[index++] = 0;
-    ComBuf[index++] = 0;
-                                           
-    // time
-    memcpy(&ComBuf[index],&DataBlock[0], 5);
-    index += 5;
-  
-    // copy data      
-    memcpy(&ComBuf[index], &DataBlock[5], 2);     
-    index += 2;
-               
-    // add another 7 data
-    for (i = 0; i < 7; i++)
-    {
-        int2bytes(noData, &ComBuf[index]);
-        index += 2;  
-    }  
-  
-    //check sum
-    cs = CheckSum(ComBuf, index, 1);
-    ComBuf[index++] = cs;
-
-    ComBuf[index++] = '\r';
-    ComBuf[index++] = '\n';
-    BytesToSend = index;
-}  */
-
 void SendPostHost(BYTE fServer)
 {
     BYTE i, n;
@@ -908,11 +772,15 @@ void SendPostLength(int len)
     TransmitBuf(0);
 }
 
-void SendPostMsg(BYTE postType, flash unsigned char* title, int length, flash unsigned char* fileHeader, BYTE nCnt)
+void SendPostMsg(BYTE postType, flash unsigned char* title, int length, flash unsigned char* fileHeader)
 {
     BYTE cs, nPctIndex = 0;
-    char endFileStr[10];    
+    int  nCnt;
+    char endFileStr[10];
                         
+     nCnt = GetEpromPcktCnt(postType);       
+     if (nCnt > 20)
+        nCnt = 20;
      // sign that for all next transmits - no need to wait for ana answer from modem
      bNeedToWait4Answer = FALSE;
      // preare end file mark string
@@ -1223,7 +1091,7 @@ void SendPostParam()
      cpu_flash_to_MemCopy(&endFileStr[2], PHYTECH_FILE_END_MARK, 8);
 
      // send post header
-     SendATCmd(AT_POST_TITLE_PRM, 0,0);        // todo - put back to AT_POST_TITLE_PRM
+     SendATCmd(AT_POST_TITLE_PRM, 0,0);     
     SendATCmd(AT_POST_CONN, 0,0);
     SendATCmd(AT_POST_TYPE, 0,0);     
     SendATCmd(PHYTECH_FILE_END_MARK, 0,0);
@@ -1278,7 +1146,17 @@ BYTE IsPrmToUpdate()
                 #endif DebugMode    
                 return TRUE;
             }
-        }
+        }                 
+        #ifdef DebugMode
+        else     
+            if (i == UPDATE_SOFTWARE_VER)
+            {   
+                 SendDebugMsg("\r\npump 0 status: ");
+                 PrintNum(GetCurPumpStat(0));
+                 SendDebugMsg("\r\npump 1 status: ");
+                 PrintNum(GetCurPumpStat(1));
+            }
+        #endif DebugMode    
     return FALSE;
 }
 
@@ -1599,6 +1477,9 @@ BYTE  DoCommand(BYTE cmd)
             break;         
         case COMMAND_GET_VLV_LST:   
             g_bSendList = TRUE;
+        break;    
+        case COMMAND_RST_CBU: 
+            SendRecRS485(CMD_RST_CBU, 0);
         break;
         case ALL_VLV_COMMAND_PING:
         case ALL_VLV_COMMAND_RST:
@@ -1982,32 +1863,28 @@ BYTE ParseValveCommandsWithDelay(int index)
     {      
         for (i = 0; i < 4; i++)
             b[i] = ComBuf[index+i];
-        index += 4;
+//        index += 4;
         lID = Bytes2ULong(b);  
-        #ifdef ValveDebug  
-        putchar1('V');          //
+        #ifdef DebugMode  
         PrintNum(lID);     
-        #endif ValveDebug  
+        #endif DebugMode  
         //check ID. if its not possible ID(wrong) - skip it. 
         if ((lID < 500000) && (lID != 0))
             return 1;   //xFF;
-           // break;
-//        for (i = 0; i < 4; i++)
-//            b[i] = ComBuf[index++]; 
-//        lNext = Bytes2ULong(b);
-        b[0] =  ComBuf[index++]; 
-        b[1] =  ComBuf[index++]; 
+           
+        //duration
+        b[0] =  ComBuf[index+4]; 
+        b[1] =  ComBuf[index+5]; 
         duration = bytes2int(b);    
         // not less than 3 minutes (only 0 allowed - stop)
         if ((duration < 4) && (duration > 0))
             return 1;                                     
         // not more than 3 days irrigation (only 9999 allowed - ping)
         if ((duration > MAX_IRRIGATION_MNT) && (IsSpecialCmd(duration) == 0))
-//        (duration != CODE_PING)&& (duration != CODE_RST) && (duration != CODE_VLV_TST) && (duration != CODE_PUMP_TST))
             return 1;   
-        
-        b[0] =  ComBuf[index+4]; 
-        b[1] =  ComBuf[index+5]; 
+                 
+        b[0] =  ComBuf[index+10]; 
+        b[1] =  ComBuf[index+11]; 
         cmdIdx = bytes2int(b);    
  
         #ifdef DebugMode  
@@ -2105,9 +1982,6 @@ int CheckResult()
         (RxUart0Buf[GetBufferIndex(i+4)] == 0x45) &&        // E
         (RxUart0Buf[GetBufferIndex(i+5)] == 0x44))          // D
         {
-//            if (toDoList == DO_DATA)                // if got failed for data msg - do also params
-//                toDoList = DO_DATA_N_PRMS;
-
             #ifdef DebugMode
             SendDebugMsg("\r\nPOST not OK2\0");
             #endif DebugMode
@@ -2192,10 +2066,6 @@ int CheckResult()
             MemCopy( clockBuf, &tmpClock[0], 3 );       //update year month day
             MemCopy( &clockBuf[4], &tmpClock[3], 2 );   //update hour minute
             clockBuf[6] = GetSec();
-//            if ((toDoList == DO_DATA) && (objToMsr == VCU1)) // if its first sensor and no params this time:
-//                if(SetRealTime() == FAILURE)
-//                {
-//                }
         }
         // check if there is PENDING
         if ((RxUart0Buf[GetBufferIndex(i)] == 0x50) &&      //P
@@ -2828,11 +2698,6 @@ BYTE GetNextTask()
                             modemCurSubTask = SUB_TASK_MODEM_CONNECT_ACTV;
                         break;
                         case SUB_TASK_MODEM_CONNECT_ACTV:  
-                        //todo - remove
-//                            {
-//                                modemCurTask = TASK_MODEM_POST;         
-//                                modemCurSubTask = waitingTask;                                          
-//                            }
                               modemCurSubTask = SUB_TASK_MODEM_CONNECT_START_DIAL;
                         break;
                         case SUB_TASK_MODEM_CONNECT_START_DIAL:   
@@ -2996,8 +2861,11 @@ BYTE GetNextTask()
                         case SUB_TASK_MODEM_CLOSE_TCP:     
                             modemCurSubTask = SUB_TASK_MODEM_EXIT;  //SUB_TASK_MODEM_CLOSE_MDM;
                             // if connects for monitor - turn off. do not continue
-                            if (IsZeroID(AppEepromData.eLoggerID))
-                                break;    
+                            if (IsZeroID(AppEepromData.eLoggerID))  
+                            {
+                                modemCurSubTask = SUB_TASK_MODEM_EXIT;
+                                break;            
+                            }
                             if (bConnectOK == FALSE)      
                             {
                                 modemCurSubTask = SUB_TASK_MODEM_CLOSE_MDM;   
@@ -3294,8 +3162,6 @@ BYTE GetNextTask()
                                 nFw2Upg = 0;
                                 modemCurTask = TASK_MODEM_CLOSE;
                                 modemCurSubTask = SUB_TASK_MODEM_CLOSE_EOD;
-//                                if ((bPostAnswered == TRUE) && (toDoList != DO_PARAMS))
-//                                    prmSentOK = TRUE;
                                 break;
                             case SUB_TASK_MODEM_POST_UPD:
                             case SUB_TASK_MODEM_POST_CNFRM:
@@ -3395,7 +3261,7 @@ BYTE GetNextTask()
 
 void ModemMain()
 {
-    BYTE res, n;
+    BYTE res;//, n;
     BYTE prevTask = modemCurSubTask;
     res = GetNextTask();
     if (res == WAIT)
@@ -3534,52 +3400,52 @@ void ModemMain()
                 case SUB_TASK_MODEM_POST_UPD:
                     nMaxFailuresNum = 3;         //max 3 times try to get update & confirm
 //                    SendPostUpdate(GET_UPDATE);                           
-                    SendPostMsg(POST_GET_UPDATE, AT_POST_TITLE_GETPRM, 8, AT_POST_FILE_HDR_UPDTPRM, 1);
+                    SendPostMsg(POST_GET_UPDATE, AT_POST_TITLE_GETPRM, 8, AT_POST_FILE_HDR_UPDTPRM);
                     UpdatePrmArr[prmUpdtIndex] = '0';
                     break;
                 case SUB_TASK_MODEM_POST_CNFRM:
                     //UpdateParam();     
                     if (prmUpdtIndex == UPDATE_VALVE_CMD)     //UPDATE_COOLING_CMD;
-                        SendPostMsg(POST_CNFRM_UPDATE, AT_POST_TITLE_CNFRMVLV, 8, AT_POST_FILE_HDR_UPDTPRM, 1);
+                        SendPostMsg(POST_CNFRM_UPDATE, AT_POST_TITLE_CNFRMVLV, 8, AT_POST_FILE_HDR_UPDTPRM);
                     else
-                        SendPostMsg(POST_CNFRM_UPDATE, AT_POST_TITLE_CNFRMPRM, 8, AT_POST_FILE_HDR_UPDTPRM, 1);
+                        SendPostMsg(POST_CNFRM_UPDATE, AT_POST_TITLE_CNFRMPRM, 8, AT_POST_FILE_HDR_UPDTPRM);
 //                    SendPostUpdate(CONFIRM_UPDATE);
                     break;
                 case SUB_TASK_MODEM_POST_DATA: 
                     nMaxFailuresNum = 1;        
-                    n = GetEpromPcktCnt(POST_VCU_DATA);   
+//                    n = GetEpromPcktCnt(POST_VCU_DATA);   
                     //Myprintf("PACKETS TO SEND: %d \0", n);  
 //                    SendPostData();
-                    SendPostMsg(POST_VCU_DATA, AT_POST_TITLE_VCU_DATA, 37, AT_POST_FILE_HDR_DATA, n);
+                    SendPostMsg(POST_VCU_DATA, AT_POST_TITLE_VCU_DATA, 37, AT_POST_FILE_HDR_DATA);
                     break;                
                 case SUB_TASK_MODEM_POST_VLV:    
                 {
                     nMaxFailuresNum = 2;  
 //                    SendPostValve();
-                    SendPostMsg(POST_GET_CMD, AT_POST_TITLE_VLV, 8, AT_POST_FILE_HDR_VALVE, 1);
+                    SendPostMsg(POST_GET_CMD, AT_POST_TITLE_VLV, 8, AT_POST_FILE_HDR_VALVE);
                 }
                 break;     
                 case SUB_TASK_MODEM_POST_CBU:     
-                    n = GetEpromPcktCnt(POST_CBU_DATA);   
+//                    n = GetEpromPcktCnt(POST_CBU_DATA);   
                     //Myprintf("packets TO SEND: %d\0", n);             
-                    SendPostMsg(POST_CBU_DATA, AT_POST_TITLE_CBU_DATA, 60, AT_POST_FILE_HDR_CBU_DATA, n);
+                    SendPostMsg(POST_CBU_DATA, AT_POST_TITLE_CBU_DATA, 60, AT_POST_FILE_HDR_CBU_DATA);
                 break;     
                 case SUB_TASK_MODEM_POST_CBU_META:                
 //                    if (g_nCbuVer == ItayCBU)
-                        SendPostMsg(POST_CBU_META_DATA, AT_POST_TITLE_CBU_META_DATA, 231, AT_POST_FILE_HDR_CBU_META, 1); 
+                        SendPostMsg(POST_CBU_META_DATA, AT_POST_TITLE_CBU_META_DATA, 231, AT_POST_FILE_HDR_CBU_META); 
 //                    else
 //                        SendPostMsg(POST_CBU_META_DATA, AT_POST_TITLE_CBU_META_DATA_OLD, 106, AT_POST_FILE_HDR_CBU_META, 1);
                 break;   
                 case SUB_TASK_MODEM_POST_VCU_LST:    
-                    SendPostMsg(POST_VCU_LIST, AT_POST_TITLE_VCU_LST, 208, AT_POST_FILE_HDR_VCU_LIST, 1); 
+                    SendPostMsg(POST_VCU_LIST, AT_POST_TITLE_VCU_LST, 208, AT_POST_FILE_HDR_VCU_LIST); 
                 break;  
                 case SUB_TASK_MODEM_POST_ALERT:   
-                    n = GetEpromPcktCnt(POST_ALERT);         
-                    SendPostMsg(POST_ALERT, AT_POST_TITLE_ALERT, 26, AT_POST_FILE_HDR_ALERT, n);
+//                    n = GetEpromPcktCnt(POST_ALERT);         
+                    SendPostMsg(POST_ALERT, AT_POST_TITLE_ALERT, 26, AT_POST_FILE_HDR_ALERT);
                 break;
                 case SUB_TASK_MODEM_POST_PUMP:   
-                    n = GetEpromPcktCnt(POST_PUMP_ACT);         
-                    SendPostMsg(POST_PUMP_ACT, AT_POST_TITLE_VCU_DATA, 37 , AT_POST_FILE_HDR_PUMP, n);
+//                    n = GetEpromPcktCnt(POST_PUMP_ACT);         
+                    SendPostMsg(POST_PUMP_ACT, AT_POST_TITLE_VCU_DATA, 37 , AT_POST_FILE_HDR_PUMP);
                 break;
                 case SUB_TASK_MODEM_GET_SW_UPDATE:   
                     nMaxFailuresNum = 1;  
@@ -3602,12 +3468,6 @@ void ModemMain()
                 break;
                 case SUB_TASK_MODEM_CLOSE_TCP:
                     SendATCmd(AT_TCP_CLS,100,2);
-//                    if ((toDoList & DO_DATA) && (dataSentOK == TRUE))
-//                        bConnectOK = TRUE;
-//                    if ((toDoList & DO_PARAMS) && (prmSentOK == TRUE))
-//                        bConnectOK = TRUE;   
-//                    if ((toDoList & DO_VALVES) && (vlvSentOK == TRUE))
-//                        bConnectOK = TRUE;   
                         // if there is number in version number
                     // if atmel firmware update:              
                     if ((fSwUpdate == 1) && (BlEepromData.versionUpdate != 0))

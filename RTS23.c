@@ -174,22 +174,25 @@ void main(void)
                 ModemMain();
                 if (bEndOfModemTask == TRUE)
                 {
-                    bEndOfModemTask = FALSE;      
-//                    g_timeFromLastConnect = 0;    
+                    if ((bExtReset == TRUE) && (bEndOfMonitorTask == FALSE))
                     {
-                        mainTask = TASK_SLEEP;                         
-                        if (btrStatus == BTR_STATUS_EMPTY)    //todo - check
-                            ShutDownModem();                
-                        else
-                        {
-                            if (SendVlvCmdToEzr() == TRUE)                       
-                            {          
+                        mainTask = TASK_MONITOR;  
+//                        monitorCurTask = TASK_MONITOR_CONNECT; 
+                        break;
+                    } 
+                    bEndOfModemTask = FALSE;  
+                    mainTask = TASK_SLEEP;                         
+                    if (btrStatus == BTR_STATUS_EMPTY)    //todo - check
+                        ShutDownModem();                
+                    else
+                    {
+                        if (SendVlvCmdToEzr() == TRUE)                       
+                        {          
 //                                #ifdef DebugMode
 //                                SendDebugMsg("\r\nNUM OF CMDS:");
 //                                PrintNum(g_cmdSndCnt);
 //                                #endif DebugMode      
-                                g_bAfterModem = TRUE; 
-                            }              
+                                g_bAfterModem = TRUE;              
                         }
                     }  
                 }

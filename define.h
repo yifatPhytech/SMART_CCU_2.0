@@ -144,17 +144,7 @@ typedef struct
     unsigned int    LowStablingTime;
 } _tagFlowDefEEPROM;
 
-typedef struct
-{
-    unsigned int    pVCUDataWrite;
-    unsigned int    pVCUDataRead;
-    unsigned int    pPmpActionWrite;
-    unsigned int    pPmpActionRead;
-    unsigned int    pCmpsDataWrite;
-    unsigned int    pCmpsDataRead;
-    unsigned int    pAlertWrite;
-    unsigned int    pAlertRead;
-} _ExtEpromPointers;
+
 
 #define SECONDS 1
 #define B2B     2
@@ -174,30 +164,30 @@ typedef struct
 #define BTR_STATUS_FULL    0
 #define BTR_STATUS_EMPTY    1
 
-#define QUARTER     15
+//#define QUARTER     15
 
 //map memory: 1 KB memory per sensor
-#define SENSOR_MEMORY_START     0x00   //0
-#define SENSOR_MEMORY_SIZE      133//0x136   //0x286   //MAX_ADDRESS / MAX_WL_SEN_NUM
-#define SENSOR_CNTRL_PRM_SIZE   28  //0x14   //20   at the end of the 1024
-#define CONTROL_PARAM_LENGTH    16
-#define SENSOR_PARAM_INDEX    24    //16
-#define SENSOR_PARAM_LENGTH  (SENSOR_CNTRL_PRM_SIZE - SENSOR_PARAM_INDEX)
-#define MAX_DATA_PER_PCKT  8
-#define PACKET_HEADER_SIZE  5
-#define PCKT_LNGTH  (PACKET_HEADER_SIZE + (2 * MAX_DATA_PER_PCKT)) //21
-#define MAX_PCKTS_PER_SENSOR    ((SENSOR_MEMORY_SIZE - SENSOR_CNTRL_PRM_SIZE) / PCKT_LNGTH)//3
+//#define SENSOR_MEMORY_START     0x00   //0
+//#define SENSOR_MEMORY_SIZE      133//0x136   //0x286   //MAX_ADDRESS / MAX_WL_SEN_NUM
+//#define SENSOR_CNTRL_PRM_SIZE   28  //0x14   //20   at the end of the 1024
+//#define CONTROL_PARAM_LENGTH    16
+//#define SENSOR_PARAM_INDEX    24    //16
+//#define SENSOR_PARAM_LENGTH  (SENSOR_CNTRL_PRM_SIZE - SENSOR_PARAM_INDEX)
+//#define MAX_DATA_PER_PCKT  8
+//#define PACKET_HEADER_SIZE  5
+//#define PCKT_LNGTH  (PACKET_HEADER_SIZE + (2 * MAX_DATA_PER_PCKT)) //21
+//#define MAX_PCKTS_PER_SENSOR    ((SENSOR_MEMORY_SIZE - SENSOR_CNTRL_PRM_SIZE) / PCKT_LNGTH)//3
 
 
-#define EEPROM_READ_BUF_LEN         50  //40              
+//#define EEPROM_READ_BUF_LEN         50  //40              
 
-#define POINTERS_SIZE               12  //8
-#define VCU_PACKET_SIZE             50
+#define POINTERS_SIZE               sizeof(_ExtEpromPointers)//18  //8
+#define VCU_PACKET_SIZE             40
 #define PUMP_ACTION_PACKET_SIZE     VCU_PACKET_SIZE  //8
-#define COMPONENT_PACKET_SIZE       50
+#define CBU_MNT_DATA_SIZE       50
 #define ALERTS_MEMORY_PACKET_SIZE   15
-
-#define MAX_PRS_PER_PCKT        12
+#define MAX_DATA_2_EPRM_SIZE        CBU_MNT_DATA_SIZE
+//#define MAX_PRS_PER_PCKT        12
 
 #define MAX_CMD 50
 
@@ -216,20 +206,18 @@ typedef struct
 #define SENSOR_RSSI_EEPROM_INDEX    3   //11
 #define SENSOR_BTR_EEPROM_INDEX     0   //8
 
-#define MAX_DATA_FROM_RCVR      50
+//#define MAX_DATA_FROM_RCVR      50
 
 #define INT_VREF 		2560	//reference voltage [mV] internal
 #define ADC_VREF_TYPE ((1<<REFS1) | (1<<REFS0) | (0<<ADLAR))  //reference voltage [mV] internal
 
-#define MAX_BAUD_RATE_OPTIONS  7
 #define MAX_RX_BUF_LEN      240 //was 64. change to 100 3/2014 for alerts
 #define MAX_RX1_BUF_LEN      240 //should be coordinated with the buffer in EZR
 #define MAX_WAIT_MNTR_SEC   2 //10
-#define MAX_REG_FAILURE    2
-#define MAX_SBD_FAILURE    2
-#define MAX_SBD_BUF_LEN     MAX_RX1_BUF_LEN             //
+//#define MAX_REG_FAILURE    2
+//#define MAX_SBD_FAILURE    2
+//#define MAX_RX1_BUF_LEN     MAX_RX1_BUF_LEN             //
 
-#define SEC_4_GSM_IGNITION  1
 
 #ifdef UseGPS
 #define MINMEA_MAX_LENGTH   MAX_RX1_BUF_LEN
@@ -255,7 +243,7 @@ typedef struct
 #define ERROR 2
 
 #define NO_DATA 2
-#define NOT_AT  3
+//#define NOT_AT  3
 
 #define UART_RADIO_UHF  0x0
 #define UART_RS485      0x10
@@ -263,9 +251,9 @@ typedef struct
 #define UART_NONE       0x30
 
 
-#define MSR_INIT    0
-#define MSR_NEEDED  1
-#define MSR_DONE    2
+//#define MSR_INIT    0
+//#define MSR_NEEDED  1
+//#define MSR_DONE    2
 
 #define NO_ANSWER       0
 #define TASK_COMPLETE   1
@@ -280,7 +268,7 @@ typedef struct
 #define TASK_MONITOR    6
 #define TASK_GPS        7
 #define TASK_BRIDGE     9
-#define TASK_EZR        10
+//#define TASK_EZR        10
 #define TASK_LISTEN       10
 
 #define RATE9600    1

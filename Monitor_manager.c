@@ -26,13 +26,14 @@
 #define REQ_RSSI    56
 #define REQ_TIMEZONE     57
 #define REQ_VER     58
-#define REQ_NUM_SEN     59
+//#define REQ_NUM_SEN     59
 #define REQ_DISCNCT   61
-#define REQ_EPOCH   64
+//#define REQ_EPOCH       64
 #define REQ_ICCID   65
-#define REQ_MODEM   66
+//#define REQ_MODEM       66
 #define REQ_CONNECT   67
 #define REQ_TEST_PUMP   68
+#define REQ_CBU_VER     69
 
 
 extern eeprom _tagAPPEEPROM AppEepromData;
@@ -48,7 +49,7 @@ extern BYTE monitorCurTask;
 extern flash unsigned char RomVersion[];
 extern int iVoltage;
 //extern BYTE rssi_val;
-extern char ComBuf[MAX_SBD_BUF_LEN];
+extern char ComBuf[MAX_RX1_BUF_LEN];
 //extern char RxUart1Buf[MAX_RX1_BUF_LEN];
 //extern DateTime g_curTime;
 //extern int buffLen;
@@ -181,11 +182,15 @@ void ExecuteGetCommand()
         case REQ_ICCID:            
             CopyICCID(8);    
             len = MAX_ICCID_LEN;
-        break;
-        case REQ_MODEM:
-            ComBuf[8] = 1;//fModemModel;
-            len = 1;
-        break;        
+        break; 
+        case REQ_CBU_VER:          
+            cpu_e2_to_MemCopy(&ComBuf[8], &AppEepromData.eCbuGlblData[4], 4);
+            len  = 4;
+            break;
+//        case REQ_MODEM:
+//            ComBuf[8] = 1;//fModemModel;
+//            len = 1;
+//        break;        
         default:
     }
     ComBuf[2] = len + 8;

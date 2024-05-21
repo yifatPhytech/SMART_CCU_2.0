@@ -15,6 +15,8 @@ extern BYTE g_bMngPumpNow;
 
 BYTE GetPumpStat();
 
+BYTE GetCurPumpStat(BYTE idx);
+
 BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYTE startMin, unsigned int cmdIndex, BYTE pumpIdx);
 
 void CheckPumpStatus();

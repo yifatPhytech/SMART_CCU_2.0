@@ -32,11 +32,7 @@ extern BYTE modemCurTask;
 extern BYTE modemCurSubTask;
 extern BYTE prmUpdtIndex;
 extern BYTE g_bModemConnect;
-//extern BYTE waitingTask;
-//extern BYTE toDoList;
-//extern BYTE dataSentOK;
-//extern BYTE vlvSentOK;
-//extern BYTE prmSentOK;
+
 extern BYTE ModemResponse;
 extern BYTE fSwUpdate;
 extern int nMaxWaitingTime;

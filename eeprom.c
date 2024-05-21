@@ -5,7 +5,7 @@
 #include "eeprom.h"
 
 //declare local & global variables
-unsigned char eepromWriteBuf[VCU_PACKET_SIZE+2]; 	//buffer for eeprom write operation
+unsigned char eepromWriteBuf[MAX_DATA_2_EPRM_SIZE+2]; 	//buffer for eeprom write operation
 unsigned char e2cmdByte;			//buffer for the eeprom command byte
 char e2_writeFlag;
 //extern char err_buf[ERR_BUF_SIZE];
@@ -20,7 +20,9 @@ char e2_writePage(unsigned int address, char write_length, char* string_1)
 {
     //char blockNum, i;
     char i;
-    e2_writeFlag = 1; //block use of i2c by clock
+    e2_writeFlag = 1; //block use of i2c by clock   
+    if (write_length > MAX_DATA_2_EPRM_SIZE)    
+        return FAILURE;
 
     eepromWriteBuf[0] = (unsigned char)((address >> 8) & 0xFF);     //address high
     eepromWriteBuf[1]  = (unsigned char)(address) ;                 //address low
@@ -54,7 +56,7 @@ char e2_writePage(unsigned int address, char write_length, char* string_1)
 char e2_readSeqBytes(unsigned int address, char read_length)
 {
     // if try to read more than writing buffer - return  failed  
-    if (read_length > EEPROM_READ_BUF_LEN)  //SENSOR_CNTRL_PRM_SIZE)
+    if (read_length > MAX_DATA_2_EPRM_SIZE)  //SENSOR_CNTRL_PRM_SIZE)
         return FAILURE;
     //char blockNum;
     e2_writeFlag = 1; //block use of i2c by clock

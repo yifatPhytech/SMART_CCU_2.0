@@ -10,18 +10,22 @@
 
 #define VCU_ID_START                40
 #define VCU_MEMORY_START            240
-#define PUMP_ACTION_MEMORY_START    56000   
-#define CMPNT_MEMORY_START          56300   //60000
-#define ALERTS_MEMORY_START         65000
+#define CMPNT_MEMORY_START          20240   
+#define PUMP_ACTION_MEMORY_START    40240    
+#define ALERTS_MEMORY_START         60240
+#define VCU_MEMORY_END            (CMPNT_MEMORY_START - VCU_PACKET_SIZE)
+#define CMPNT_MEMORY_END          (PUMP_ACTION_MEMORY_START - CBU_MNT_DATA_SIZE)
+#define PUMP_ACTION_MEMORY_END    (ALERTS_MEMORY_START - PUMP_ACTION_PACKET_SIZE) 
+#define ALERTS_MEMORY_END         65500
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 //extern DateTime g_curTime;
 //extern BYTE g_bHighPrio;
 static _ExtEpromPointers  eprmPonter;
-unsigned int pOriginalReadBlock;
+static unsigned int pOriginalReadBlock;
 extern char e2_writeFlag;
 extern char DataBlock[];
-extern volatile unsigned char eepromReadBuf[EEPROM_READ_BUF_LEN];   //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
+extern volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];   //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
 //extern unsigned int objToMsr;
 
 BYTE IsAddressOnPageLimit(unsigned int iAddress, int iSize)
@@ -198,7 +202,9 @@ char ResetPointers()
     eprmPonter.pCmpsDataWrite = CMPNT_MEMORY_START;
     eprmPonter.pCmpsDataRead = CMPNT_MEMORY_START; 
     eprmPonter.pAlertWrite = ALERTS_MEMORY_START;
-    eprmPonter.pAlertRead = ALERTS_MEMORY_START;
+    eprmPonter.pAlertRead = ALERTS_MEMORY_START;        
+    eprmPonter.pVCUDataOverlap = 0;
+    eprmPonter.pCmpsDataOverlap = 0;
     return SavePointers(); 
 }
 
@@ -218,7 +224,7 @@ void InitVCUIdEeprom()
     BYTE i;
     memset(DataBlock, 0, VCU_PACKET_SIZE);      
     for (i = 0; i < 5; i++)
-        WriteBufIntoExte2(DataBlock, VCU_ID_START+(VCU_PACKET_SIZE*i) , VCU_PACKET_SIZE); 
+        WriteBufIntoExte2(DataBlock, VCU_ID_START+(40*i) , 40); 
 }
 
 //the function will copy one data block from ext_e2 (pBread address)
@@ -315,65 +321,36 @@ char SaveVcuData(char* data, BYTE len, BYTE situation)
     if (WriteBufIntoExte2(headerArr, eprmPonter.pVCUDataWrite, VCU_PACKET_SIZE) == FALSE)
         return FALSE;
     eprmPonter.pVCUDataWrite += VCU_PACKET_SIZE;    
-    
-    g_bHighPrio = TRUE;
-    return TRUE;    //SavePointers();  
-}
-
-/*char SaveVcuDataOld(char* data, BYTE len, BYTE situation)
-{
-    char headerArr[VCU_PACKET_SIZE];   
-    BYTE  idx = 0;       
-    float_bytes tmp;  
-                               
-    memset(&headerArr[idx], 0, VCU_PACKET_SIZE);     
-    tmp.fVal = 0xff7f;
-  
-//    SendDebugMsg("\r\nresetData= ");
-//    PrintNum(resetData);
-        
-    memcpy(&headerArr[0], &g_curTime, 5);   
-    memcpy(&headerArr[5], data, 7); 
-    headerArr[12] = situation; 
-    memcpy(&headerArr[13], &data[9], len-9);  
-    idx = 5 + len - 1;                
-                
-    for (; idx < VCU_PACKET_SIZE - 2; idx+=4)     
+    if (eprmPonter.pVCUDataWrite > VCU_MEMORY_END)  
     {
-        memcpy(&headerArr[idx], tmp.bVal, 4);
-//        int2bytes(resetData, &headerArr[idx]); 
-    }    
-      
-    if (WriteBufIntoExte2(headerArr, eprmPonter.pVCUDataWrite, VCU_PACKET_SIZE) == FALSE)
-        return FALSE;
-    eprmPonter.pVCUDataWrite += VCU_PACKET_SIZE;    
-    
+        eprmPonter.pVCUDataWrite = VCU_MEMORY_START;        
+        eprmPonter.pVCUDataOverlap = 1;
+    }
     g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();  
 }
-*/
 
 BYTE GetNextEprom2Send(BYTE prevPost)
 {
-    if (prevPost < POST_ALERT) 
+    if (prevPost <= POST_ALERT) 
         if (eprmPonter.pAlertRead != eprmPonter.pAlertWrite)
         {             
             pOriginalReadBlock = eprmPonter.pAlertRead;
             return POST_ALERT;                       
         }  
-    if (prevPost < POST_CBU_DATA)
+    if (prevPost <= POST_CBU_DATA)
         if (eprmPonter.pCmpsDataRead != eprmPonter.pCmpsDataWrite)
         {             
             pOriginalReadBlock = eprmPonter.pCmpsDataRead;
             return POST_CBU_DATA;  
         }    
-    if (prevPost < POST_VCU_DATA)                 
+    if (prevPost <= POST_VCU_DATA)                 
         if (eprmPonter.pVCUDataRead != eprmPonter.pVCUDataWrite)
         {             
             pOriginalReadBlock = eprmPonter.pVCUDataRead;
             return POST_VCU_DATA;     
         }                          
-    if (prevPost < POST_PUMP_ACT) 
+    if (prevPost <= POST_PUMP_ACT) 
         if (eprmPonter.pPmpActionRead != eprmPonter.pPmpActionWrite)
         {             
             pOriginalReadBlock = eprmPonter.pPmpActionRead;
@@ -383,7 +360,7 @@ BYTE GetNextEprom2Send(BYTE prevPost)
 }
 
 
-BYTE GetEpromPcktCnt(BYTE nType)
+int GetEpromPcktCnt(BYTE nType)
 {
      switch (nType)
     {       
@@ -397,17 +374,22 @@ BYTE GetEpromPcktCnt(BYTE nType)
 //            SendDebugMsg("\r\npCmpsDataRead= \0");   
 //            PrintNum(eprmPonter.pCmpsDataRead);            
 //            #endif DebugMode     
-            return (eprmPonter.pCmpsDataWrite - eprmPonter.pCmpsDataRead) / COMPONENT_PACKET_SIZE;
+            if (eprmPonter.pCmpsDataOverlap == 0)
+                return (eprmPonter.pCmpsDataWrite - eprmPonter.pCmpsDataRead) / CBU_MNT_DATA_SIZE;
+            else        
+                return (CMPNT_MEMORY_END - eprmPonter.pVCUDataRead) / VCU_PACKET_SIZE;
         break;
-        case POST_VCU_DATA:
-//            Myprintf("pVCUDataWrite= %d pVCUDataRead = %d\0", eprmPonter.pVCUDataWrite, eprmPonter.pVCUDataRead); 
-            return (eprmPonter.pVCUDataWrite - eprmPonter.pVCUDataRead) / VCU_PACKET_SIZE;
+        case POST_VCU_DATA:              
+            if (eprmPonter.pVCUDataOverlap == 0)
+                return (eprmPonter.pVCUDataWrite - eprmPonter.pVCUDataRead) / VCU_PACKET_SIZE;     
+            else        
+                return (CMPNT_MEMORY_END - eprmPonter.pVCUDataRead) / VCU_PACKET_SIZE;                
         break;
         case POST_PUMP_ACT:
             return (eprmPonter.pPmpActionWrite - eprmPonter.pPmpActionRead) / PUMP_ACTION_PACKET_SIZE;
         break;     
         default:
-            return 0;
+            return 1;
     }
 }
 
@@ -446,7 +428,9 @@ char SavePumpActionData(int action, char res, unsigned int cmdIdx, BYTE pmpIdx)
     {
         return FALSE;          
     }
-    eprmPonter.pPmpActionWrite += PUMP_ACTION_PACKET_SIZE;    
+    eprmPonter.pPmpActionWrite += PUMP_ACTION_PACKET_SIZE;   
+    if (eprmPonter.pPmpActionWrite > PUMP_ACTION_MEMORY_END)
+        eprmPonter.pPmpActionWrite = PUMP_ACTION_MEMORY_START; 
     
     g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();
@@ -454,7 +438,7 @@ char SavePumpActionData(int action, char res, unsigned int cmdIdx, BYTE pmpIdx)
 
 char SaveCBUPortData(char * data)
 {
-    char headerArr[COMPONENT_PACKET_SIZE];   
+    char headerArr[CBU_MNT_DATA_SIZE];   
     BYTE idx = 0;    
     
 //    ReadPointers(); 
@@ -465,11 +449,16 @@ char SaveCBUPortData(char * data)
     headerArr[idx++] = g_curTime.minute; 
     memcpy(&headerArr[idx], data, 44);    
          
-    if (WriteBufIntoExte2(headerArr, eprmPonter.pCmpsDataWrite, COMPONENT_PACKET_SIZE) == FALSE)    
+    if (WriteBufIntoExte2(headerArr, eprmPonter.pCmpsDataWrite, CBU_MNT_DATA_SIZE) == FALSE)    
     {
         return FALSE;
     }              
-    eprmPonter.pCmpsDataWrite += COMPONENT_PACKET_SIZE;      
+    eprmPonter.pCmpsDataWrite += CBU_MNT_DATA_SIZE; 
+    if (eprmPonter.pCmpsDataWrite > CMPNT_MEMORY_END)
+    {
+        eprmPonter.pCmpsDataWrite = CMPNT_MEMORY_START;   
+        eprmPonter.pCmpsDataOverlap = 1;
+    }
 //    #ifdef DebugMode
 //    SendDebugMsg("\r\npCmpsDataWrite \0");
 //    PrintNum(eprmPonter.pCmpsDataWrite);
@@ -500,6 +489,8 @@ char SaveAlertData(char * alert)
         return FALSE;
     }              
     eprmPonter.pAlertWrite += ALERTS_MEMORY_PACKET_SIZE;    
+    if (eprmPonter.pAlertWrite > ALERTS_MEMORY_END)
+        eprmPonter.pAlertWrite = ALERTS_MEMORY_START;
     g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();
 }
@@ -561,16 +552,34 @@ void InitWritPntr(BYTE nPacketType)
     switch (nPacketType)
     {       
         case POST_PUMP_ACT:
-            eprmPonter.pPmpActionWrite = PUMP_ACTION_MEMORY_START;           
+            if (eprmPonter.pPmpActionRead == eprmPonter.pPmpActionWrite)
+            {              
+                eprmPonter.pPmpActionRead = PUMP_ACTION_MEMORY_START;
+                eprmPonter.pPmpActionWrite = PUMP_ACTION_MEMORY_START;           
+            }
         break;
-        case POST_CBU_DATA:
-           eprmPonter.pCmpsDataWrite = CMPNT_MEMORY_START;         
+        case POST_CBU_DATA:     
+            if (eprmPonter.pCmpsDataRead == eprmPonter.pCmpsDataWrite)
+            {              
+                eprmPonter.pCmpsDataRead = CMPNT_MEMORY_START;            
+                eprmPonter.pCmpsDataWrite = CMPNT_MEMORY_START;        
+                eprmPonter.pCmpsDataOverlap = 0;
+            }       
         break;
         case POST_ALERT:
-            eprmPonter.pAlertWrite = ALERTS_MEMORY_START;
+            if (eprmPonter.pAlertRead == eprmPonter.pAlertWrite)
+            {              
+                eprmPonter.pAlertRead = ALERTS_MEMORY_START;
+                eprmPonter.pAlertWrite = ALERTS_MEMORY_START;
+            }
         break;     
         case POST_VCU_DATA: 
-            eprmPonter.pVCUDataWrite = VCU_MEMORY_START;
+            if (eprmPonter.pVCUDataRead == eprmPonter.pVCUDataWrite)
+            {              
+                eprmPonter.pVCUDataRead = VCU_MEMORY_START;
+                eprmPonter.pVCUDataWrite = VCU_MEMORY_START;   
+                eprmPonter.pVCUDataOverlap = 0;
+            }       
         break;     
         default:
             ;
@@ -590,7 +599,7 @@ BYTE ReadPacket(BYTE nPacketType)
         break;
         case POST_CBU_DATA:
             pRead = eprmPonter.pCmpsDataRead; 
-            nSize = COMPONENT_PACKET_SIZE;
+            nSize = CBU_MNT_DATA_SIZE;
         break;
         case POST_ALERT:
             pRead = eprmPonter.pAlertRead; 
@@ -619,32 +628,29 @@ BYTE ReadPacket(BYTE nPacketType)
     {       
         case POST_PUMP_ACT:
             eprmPonter.pPmpActionRead += PUMP_ACTION_PACKET_SIZE;  
-            if (eprmPonter.pPmpActionRead == eprmPonter.pPmpActionWrite)
-            {              
-                eprmPonter.pPmpActionRead = PUMP_ACTION_MEMORY_START;
-            }
+            if (eprmPonter.pPmpActionRead >= PUMP_ACTION_MEMORY_END)
+                eprmPonter.pPmpActionRead = PUMP_ACTION_MEMORY_START;      
         break;
         case POST_CBU_DATA:
-            eprmPonter.pCmpsDataRead += COMPONENT_PACKET_SIZE;  
-            if (eprmPonter.pCmpsDataRead == eprmPonter.pCmpsDataWrite)
-            {              
-                eprmPonter.pCmpsDataRead = CMPNT_MEMORY_START;
-            }
- 
+            eprmPonter.pCmpsDataRead += CBU_MNT_DATA_SIZE;   
+            if (eprmPonter.pCmpsDataRead >= CMPNT_MEMORY_END)  
+            {
+                eprmPonter.pCmpsDataRead = CMPNT_MEMORY_START;   
+                eprmPonter.pCmpsDataOverlap = 0;                  
+            }     
         break;
         case POST_ALERT:
             eprmPonter.pAlertRead += ALERTS_MEMORY_PACKET_SIZE;  
-            if (eprmPonter.pAlertRead == eprmPonter.pAlertWrite)
-            {              
-                eprmPonter.pAlertRead = ALERTS_MEMORY_START;
-            }
+            if (eprmPonter.pAlertRead >= ALERTS_MEMORY_END)
+                eprmPonter.pAlertRead = ALERTS_MEMORY_START;      
         break;     
         case POST_VCU_DATA:     
-            eprmPonter.pVCUDataRead += VCU_PACKET_SIZE;  
-            if (eprmPonter.pVCUDataRead == eprmPonter.pVCUDataWrite)
-            {              
-                eprmPonter.pVCUDataRead = VCU_MEMORY_START;
-            }       
+            eprmPonter.pVCUDataRead += VCU_PACKET_SIZE; 
+            if (eprmPonter.pVCUDataRead > VCU_MEMORY_END) 
+            { 
+                eprmPonter.pVCUDataRead = VCU_MEMORY_START;  
+                eprmPonter.pVCUDataOverlap = 0;
+            } 
             
         break;     
         default:
@@ -665,21 +671,21 @@ BYTE ReadPacket(BYTE nPacketType)
 
 BYTE ValidatePointers()      
 {
-    if ((eprmPonter.pVCUDataWrite < VCU_MEMORY_START) || (eprmPonter.pVCUDataWrite >= PUMP_ACTION_MEMORY_START)) 
+    if ((eprmPonter.pVCUDataWrite < VCU_MEMORY_START) || (eprmPonter.pVCUDataWrite >= VCU_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pVCUDataRead < VCU_MEMORY_START) || (eprmPonter.pVCUDataRead >= PUMP_ACTION_MEMORY_START)) 
+    if ((eprmPonter.pVCUDataRead < VCU_MEMORY_START) || (eprmPonter.pVCUDataRead >= VCU_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pPmpActionWrite < PUMP_ACTION_MEMORY_START) || (eprmPonter.pPmpActionWrite >= CMPNT_MEMORY_START)) 
+    if ((eprmPonter.pPmpActionWrite < PUMP_ACTION_MEMORY_START) || (eprmPonter.pPmpActionWrite >= PUMP_ACTION_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pPmpActionRead < PUMP_ACTION_MEMORY_START) || (eprmPonter.pPmpActionRead >= CMPNT_MEMORY_START)) 
+    if ((eprmPonter.pPmpActionRead < PUMP_ACTION_MEMORY_START) || (eprmPonter.pPmpActionRead >= PUMP_ACTION_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pCmpsDataWrite < CMPNT_MEMORY_START) || (eprmPonter.pCmpsDataWrite >= ALERTS_MEMORY_START)) 
+    if ((eprmPonter.pCmpsDataWrite < CMPNT_MEMORY_START) || (eprmPonter.pCmpsDataWrite >= CMPNT_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pCmpsDataRead < CMPNT_MEMORY_START) || (eprmPonter.pCmpsDataRead >= ALERTS_MEMORY_START)) 
+    if ((eprmPonter.pCmpsDataRead < CMPNT_MEMORY_START) || (eprmPonter.pCmpsDataRead >= CMPNT_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pAlertWrite < ALERTS_MEMORY_START) || (eprmPonter.pAlertWrite >= 65500)) 
+    if ((eprmPonter.pAlertWrite < ALERTS_MEMORY_START) || (eprmPonter.pAlertWrite >= ALERTS_MEMORY_END)) 
         return FALSE;
-    if ((eprmPonter.pAlertRead < ALERTS_MEMORY_START) || (eprmPonter.pAlertRead >= 65500)) 
+    if ((eprmPonter.pAlertRead < ALERTS_MEMORY_START) || (eprmPonter.pAlertRead >= ALERTS_MEMORY_END)) 
         return FALSE;
     return TRUE;
 }
