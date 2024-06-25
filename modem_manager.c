@@ -229,7 +229,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',5, YEAR, 20};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',6, YEAR, 22};   //__BUILD__
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 
@@ -1890,7 +1890,8 @@ BYTE ParseValveCommandsWithDelay(int index)
         #ifdef DebugMode  
         putchar1('D');                 
         PrintNum(duration);
-        #endif DebugMode              
+        #endif DebugMode  
+        index = 7;            
         if (lID == (long)0)
         {                    
             if ((duration == CODE_PUMP_TST))

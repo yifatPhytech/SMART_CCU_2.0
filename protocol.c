@@ -195,7 +195,8 @@ BYTE PROTOCOL_Task(EProtocolCommand cmd, BYTE bIsMore)
     rx1_buff_len = 0;
     SendRequest();       
     nTimeCnt = 15;
-    while ((nTimeCnt > 0) && (bCheckRx1Buf == FALSE));
+    while ((nTimeCnt > 0) && (bCheckRx1Buf == FALSE));  
+    
     if (bCheckRx1Buf == TRUE)     
     {                 
         return HandleResponse();

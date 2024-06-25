@@ -11,6 +11,8 @@
 #include "HW_manager.h"
 #include "Ezr_com_manager.h"
 
+//#define DebugEZR
+
 #define EZR_RST_ENABLE() (PORTA.5 = 1);        
 #define EZR_RST_DISABLE() (PORTA.5 = 0);
 
@@ -82,8 +84,10 @@ BYTE ValidateEZRPacket()
 {
     BYTE i, pcktSize, cs, msgType, index,msgLen;//, res;
     unsigned long lID;   
-        
-//    mainTask = TASK_MONITOR;   
+                     
+     #ifdef DebugEZR
+    mainTask = TASK_MONITOR; 
+     #endif DebugEZR  
     fGotData++;  
     
     if (flgUart1Error != 0)
@@ -91,10 +95,10 @@ BYTE ValidateEZRPacket()
         flgUart1Error = 0;
     }
 
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\nbuffLen: \0");  
     PrintNum(buffLen);
-    #endif DebugMode
+    #endif DebugEZR
 
     if (buffLen < 10)
     {
@@ -128,10 +132,10 @@ BYTE ValidateEZRPacket()
    i = 0;
     while ((RxUart1Buf[i] != 0xAB) && (RxUart1Buf[i] != 0xAC) && (i < buffLen))
         i++;
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\n0xAB index: \0");  
     PrintNum(i);
-    #endif DebugMode
+    #endif DebugEZR
     if (RxUart1Buf[i] != 0xAB)
     {          
         if (RxUart1Buf[i] != 0xAC)    
@@ -141,10 +145,10 @@ BYTE ValidateEZRPacket()
     }
     pcktSize = RxUart1Buf[i + SIZE_BYTE_INDEX];   
 
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\npcktSize: \0");  
     PrintNum(pcktSize);
-    #endif DebugMode
+    #endif DebugEZR
     if (buffLen < pcktSize + 1)    // 1 = number of bytes not include in size
     {
         return FALSE;
@@ -153,12 +157,12 @@ BYTE ValidateEZRPacket()
     cs = CheckSum(&RxUart1Buf[i], pcktSize  ,1);
     if (cs != RxUart1Buf[pcktSize+i])
     {
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\ncalc cs: \0");  
     PrintNum(cs);
     SendDebugMsg("\r\ngot cs: \0");  
     PrintNum(RxUart1Buf[pcktSize+i]);
-    #endif DebugMode
+    #endif DebugEZR
         return FALSE;
     }      
                   
@@ -169,34 +173,38 @@ BYTE ValidateEZRPacket()
         // check msg type                                                                                
         if ((msgType != OBJ_NEW_VCU_DATA) && (msgType != OBJ_NOT_IN_LST_VCU_DATA))
         {
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\nmsgType: \0");  
     PrintNum(msgType);
-    #endif DebugMode
+    #endif DebugEZR
             return FALSE;
         }
         msgLen = RxUart1Buf[index+1];   
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\nmsgLen: \0");  
     PrintNum(msgLen);
-    #endif DebugMode
+    #endif DebugEZR
          
         lID = Bytes2ULong(&RxUart1Buf[index+ID]);
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\nlID: \0");  
     PrintNum(lID);
-    #endif DebugMode
+    #endif DebugEZR
         if (lID <= 500000)
         {
-            #ifdef DebugMode
+            #ifdef DebugEZR
             SendDebugMsg("\r\nID<500000 is wrong. skip data\0");
-            #endif DebugMode
+            #endif DebugEZR
                 index += msgLen;
             continue;
         }              
         index += msgLen;
     }                      
     while (index < pcktSize);// && (senIndex < MAX_DATA_FROM_RCVR));  // as long hasn't reach to end of data or got max num sensors for 1 cycle  
+    #ifdef DebugEZR
+    SendDebugMsg("\r\nvalid\0");
+    #endif DebugEZR
+
     return TRUE;
 }
 
@@ -206,49 +214,49 @@ void SavePhytechData()
     unsigned long lID;  
 
 //todo - remove
-//    #ifdef DebugMode
-//    mainTask = TASK_MONITOR;   
-//    #endif DebugMode
+    #ifdef DebugEZR
+    mainTask = TASK_MONITOR;   
+    #endif DebugEZR
     GetRealTime(); 
     i = 0;
     while ((RxUart1Buf[i] != 0xAB) && (RxUart1Buf[i] != 0xAC) &&  (i < buffLen))
         i++;
     pcktSize = RxUart1Buf[i + SIZE_BYTE_INDEX];
                 
-//    #ifdef DebugMode
+//    #ifdef DebugEZR
 //    SendDebugMsg("\r\npacket size: \0");  
 //    PrintNum(pcktSize);
-//    #endif DebugMode
+//    #endif DebugEZR
     index = i + FIRST_DATA_INDEX;
     do
     {
         msgType = RxUart1Buf[index];   
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\nmsgType: \0");  
     PrintNum(msgType);
-    #endif DebugMode
+    #endif DebugEZR
         msgLen = RxUart1Buf[index+1];   
-    #ifdef DebugMode
+    #ifdef DebugEZR
     SendDebugMsg("\r\npacket length: \0");  
     PrintNum(msgLen);
-    #endif DebugMode
+    #endif DebugEZR
         
         lID = Bytes2ULong(&RxUart1Buf[index+ID]);  
-         #ifdef DebugMode
+         #ifdef DebugEZR
         SendDebugMsg("\r\nID=\0");   
         PrintNum(lID);
-        #endif DebugMode
+        #endif DebugEZR
         if (lID <= 500000)
         {
-            #ifdef DebugMode
+            #ifdef DebugEZR
             SendDebugMsg("\r\nID=0 is wrong. skip data\0");   
-            #endif DebugMode  
+            #endif DebugEZR  
             if (msgLen == 0)
                 return;
             index += msgLen;
             continue;
         }                                          
-        #ifdef DebugMode       
+        #ifdef DebugEZR       
         for (i = index; i< msgLen+index; i++)
         {
             PrintOnlyNum(RxUart1Buf[i]); 
@@ -258,7 +266,7 @@ void SavePhytechData()
 //        PrintNum(RxUart1Buf[index+9]);           
 //        SendDebugMsg("\r\nIndex+10: \0");     
 //        PrintNum(RxUart1Buf[index+10]);  
-        #endif DebugMode   
+        #endif DebugEZR   
         // isolate situation from byte and save it            
         if (msgType == OBJ_NOT_IN_LST_VCU_DATA)    
             SaveVcuData(&RxUart1Buf[index+ID], msgLen-2, RxUart1Buf[index + MSG_TYPE_POS]); 
@@ -298,9 +306,9 @@ void SavePhytechData()
 //    if (openPump != 0)
 //        CheckVCUStatus();
     // todo - remove
-//     #ifdef DebugMode
-//    mainTask = TASK_EZR_COM;
-//    #endif DebugMode
+     #ifdef DebugEZR
+    mainTask = TASK_EZR_COM;
+    #endif DebugEZR
 }
 
 
@@ -411,8 +419,13 @@ bool MeasureMain()
 //            break;
         case TASK_MSR_SAVE:
             bCheckRx1Buf = FALSE;
-            nParseAns = ValidateEZRPacket();   
-//            mainTask = TASK_EZR_COM;
+            nParseAns = ValidateEZRPacket();  
+             #ifdef DebugEZR 
+            mainTask = TASK_EZR_COM;
+                UART1Select(UART_RADIO_UHF);   
+                 ResetUart1();
+        delay_ms(500);             
+             #endif DebugEZR
            if (nParseAns == TRUE)
             {                      
                 nNoDataCnt = 0;

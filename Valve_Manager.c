@@ -352,7 +352,17 @@ unsigned long CalcScndsToStart(Time strtTime)
                   
     t1 = (g_curTime.hour * 60) + g_curTime.minute;
     t2 = (strtTime.hour * 60) + strtTime.minute;  
-  //  printf("g_curTime minutes %d strtTime minutes %d", t1,t2);
+  
+//    #ifdef DebugMode  
+//        SendDebugMsg("\r\nt1 =  \0");
+//        PrintNum(t1);      
+//        SendDebugMsg("\r\nt2 =  \0");
+//        PrintNum(t2);      
+//        SendDebugMsg("\r\ng_curTime: \0");
+//        PrintNum(g_curTime.hour);   
+//        #endif DebugMode    
+
+
     if (t1 == t2)
         return (nCntDown / 10);  
     iMnt = t2 - t1 - 1;    
@@ -572,139 +582,7 @@ void UpdateVCUStatus(unsigned long id, /*BYTE stat,*/ BYTE situation, BYTE extMs
 //        CalcPumpEndTime();
     }
 }
-  /*
-BYTE InsertNewCmd(unsigned long id,  unsigned int dur, BYTE startHour, BYTE startMin)
-{
-    BYTE index;     
-    //NextIrrigation* pNxtIrg = NULL;      
-    Time t, t1;
-    unsigned long n1, n2;    
-    BYTE bIsNextIrg = FALSE;
 
-    GetRealTime();   
-     
-    // find if there is cmmd for this ID already
-    index = GetVCUIndex(id);   
-    // if no - find first empty row
-    if (index >= MAX_CMD)     
-    {             
-        #ifdef NOT_ONLY_LIST
-        index = GetVCUIndex(0);
-        if (index >= MAX_CMD)       
-        #endif NOT_ONLY_LIST
-        #ifdef DebugMode        
-        SendDebugMsg("\r\n VCU not in my list \0");     
-        #endif DebugMode            
-        return MAX_CMD;    
-    }                       
-    //todo - remove. gets id only in list
-    #ifdef NOT_ONLY_LIST
-    vlvCmdArr[index].VCU_ID = id;  
-    SaveVCUIdAtEeprom(id, index);   
-    #endif NOT_ONLY_LIST
-//    vlvCmdArr[index].iExtPrm = FALSE;
-//    #ifdef DebugMode  
-//    Myprintf("index of VCU: %d\0", index);
-//    #endif DebugMode    
-    // if server send start time is 25:00 it means start now  
-    if (((startHour == 99) && (startMin == 99)) && (dur <= MAX_IRRIGATION_MNT)) 
-    {      
-        startHour = g_curTime.hour;                            
-        startMin = g_curTime.minute;
-        vlvCmdArr[index].iExtPrm |= EXT_START_NOW;
-    }   
-    t.hour = startHour;
-    t.minute = startMin;                                       
-
-    if ((dur == CODE_PING) || (dur == CODE_RST) || (dur == CODE_VLV_TST))  
-    {      
-        startHour = g_curTime.hour;                            
-        startMin = g_curTime.minute;
-        switch (dur)
-        {
-            case CODE_PING:
-                vlvCmdArr[index].iExtPrm |= EXT_PING;  
-                break;
-            case CODE_RST: 
-                vlvCmdArr[index].iExtPrm |= EXT_RST;
-                break; 
-            case CODE_VLV_TST: 
-                vlvCmdArr[index].iExtPrm |= EXT_TST;
-                break; 
-        }
-        vlvCmdArr[index].cmdStatus = STATUS_CMD_IN;   
-        vlvCmdArr[index].nSec2Start = nCntDown;       
-        vlvCmdArr[index].startTime.minute = g_curTime.minute;
-        vlvCmdArr[index].startTime.hour = g_curTime.hour;        
-        #ifdef DebugMode  
-        SendDebugMsg("\r\nsetup special irrigation\0");
-        #endif DebugMode 
-        return index;
-    }   
-
-    // if valve is already working - check if this command is during its work
-    if ((vlvCmdArr[index].vlvStatus == STATUS_VCU_ON) && (dur != 0))  
-    {                
-        n1 = CalcScndsToStart(t);
-        t1.hour = vlvCmdArr[index].stopTimeStamp.hour;
-        t1.minute = vlvCmdArr[index].stopTimeStamp.minute;        
-        n2 = CalcScndsToStart(t1);   
-        // if it later -        
-        if (n1 > n2)
-            bIsNextIrg = TRUE;  
-    }
-    if (bIsNextIrg == FALSE)    
-    {
-        vlvCmdArr[index].iDuration = dur;     
-        vlvCmdArr[index].cmdStatus = STATUS_CMD_IN;   
-        vlvCmdArr[index].startTime = t; 
-        if (vlvCmdArr[index].startTime.minute > 59)
-        {         
-            vlvCmdArr[index].startTime.minute -= 60;        
-            vlvCmdArr[index].startTime.hour++;        
-        }                        
-        if (dur == 0)                                
-        {                         
-            vlvCmdArr[index].startTime.minute = g_curTime.minute;
-            vlvCmdArr[index].startTime.hour = g_curTime.hour;
-            vlvCmdArr[index].vlvStatus = STATUS_VCU_OFF;         
-            CalcPumpEndTime();
-        }
-//        else     
-        vlvCmdArr[index].nSec2Start = CalcScndsToStart(vlvCmdArr[index].startTime) * 10;
-        #ifdef DebugMode  
-        SendDebugMsg("\r\nseconds to start: \0");
-        PrintNum(vlvCmdArr[index].nSec2Start);  
-        #endif DebugMode 
-    } 
-    else
-    {       
-//        if (vlvCmdArr[index].nextIrg == NULL)   
-//        {
-//        #ifdef DebugMode  
-//        SendDebugMsg("\r\nsizeof(NextIrrigation)= \0");
-//        PrintNum(sizeof(NextIrrigation));  
-//        #endif DebugMode 
-//            vlvCmdArr[index].nextIrg = (NextIrrigation*)malloc(sizeof(NextIrrigation));       
-//        }
-//        if (vlvCmdArr[index].nextIrg != NULL)
-        { 
-        vlvCmdArr[index].nextIrg.iDuration = dur;
-        vlvCmdArr[index].nextIrg.startTime = t;   
-//        vlvCmdArr[index].nextIrg = pNxtIrg;
-        #ifdef DebugMode  
-        SendDebugMsg("\r\nsetup next irrigation\0");
-        #endif DebugMode     
-        }
-    }
-    #ifdef ValveDebug    
-    putchar1('I');   
-    PrintNum(id);
-    PrintNum(dur);        
-    #endif ValveDebug  
-    return index;
-}
- */
 BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYTE startMin, unsigned int cmdIndex)
 {
     BYTE index;     
@@ -714,7 +592,12 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
     BYTE bIsNextIrg = FALSE;
 
     GetRealTime();   
-     
+//    #ifdef DebugMode  
+//        SendDebugMsg("\r\nInsert New Cmd. START hour: \0");
+//        PrintNum(startHour);      
+//        SendDebugMsg("\r\nstart minute: \0");
+//        PrintNum(startMin);   
+//        #endif DebugMode    
     // find if there is cmmd for this ID already
     index = GetVCUIndex(id);   
     // if no - find first empty row
@@ -779,15 +662,7 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
         t1.hour = vlvCmdArr[index].stopTimeStamp.hour;
         t1.minute = vlvCmdArr[index].stopTimeStamp.minute;        
         n2 = CalcScndsToStart(t1); 
-//        #ifdef DebugMode  
-//        SendDebugMsg("\r\nseconds to start next irg: \0");
-//        PrintNum(n1);      
-//        SendDebugMsg("\r\nstop time: \0");
-//        PrintNum(t1.hour);          
-//        PrintNum(t1.minute);          
-//        SendDebugMsg("\r\nseconds to end cur irg: \0");
-//        PrintNum(n2);  
-//        #endif DebugMode   
+
         // if it later -        
         if (n1 > n2)
             bIsNextIrg = TRUE;  

@@ -32,7 +32,7 @@ void CheckPumpFitStatus()
     //if hasnt changd pump state currntly
     if (g_bMngPumpNow == FALSE)            //toddo - make double
      // if pump logic state at CBU is open, and at CCU - it closed      //TODO  add check for 2nd pump
-        if ((g_bCBUPumpState[0] == 1) &&  (pumpAsVlv[i].IsPumpOpen == FALSE))   //(g_bMainPumpOpen == FALSE))            
+        if ((g_bCBUPumpState[i] == 1) &&  (pumpAsVlv[i].IsPumpOpen == FALSE))   //(g_bMainPumpOpen == FALSE))            
             CloseMainPump(i, TRUE);
 }
 
