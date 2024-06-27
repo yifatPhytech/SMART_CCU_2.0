@@ -29,7 +29,7 @@
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char ANSWER_ACK[] = "ACKACKACK@";
 static BYTE nBadAnswer = 0;
-static BYTE nCycles;
+static BYTE nRetry;
 static BYTE nParseAns;
 static BYTE fGotData;
 static BYTE nNoDataCnt = 0;
@@ -62,7 +62,7 @@ void InitEZRCom()
     ResetUart1();
     fGotData = 0;
 //    nBadAnswer = 0;
-    nCycles = 0;           
+    nRetry = 0;           
 }
 
 void ReadData()
@@ -70,7 +70,7 @@ void ReadData()
 //    unsigned int i;
     bWait4WLSensor = TRUE;
     nTimeCnt = 20;  // 2 sec timeout
-    nCycles++;          
+    nRetry++;          
     memset(RxUart1Buf,0, MAX_RX1_BUF_LEN);
     rx1_buff_len = 0;
     flgUart1Error = FALSE;
@@ -351,28 +351,21 @@ BYTE GetNextMsrTask()
 //            else 
 //                msrCurTask = TASK_MSR_LISTEN;                
         break;  
-//        case TASK_MSR_LISTEN:  
-//            if (bCheckRx1Buf == TRUE)
-//                msrCurTask = TASK_MSR_SAVE; 
-//            else
-//            {
-//                if ((nTimeCnt > 0) && (g_cmdSndCnt > 0))
-//                    return WAIT; 
-//                else
-//                    msrCurTask = TASK_MSR_CLOSURE;
-//            }
-//        break;
         case TASK_MSR_READ:
-            if ((nCycles > 3) || (nBadAnswer > 3))  
-            {                             
-                msrCurTask = TASK_MSR_CLOSURE;
+            if (bCheckRx1Buf == TRUE) 
+            {
+                msrCurTask = TASK_MSR_SAVE;     
                 break;
             }
-            if (bCheckRx1Buf == TRUE)
-                msrCurTask = TASK_MSR_SAVE;
             else
                 if (nTimeCnt > 0)
                     return WAIT;
+            if ((nRetry >= 3))// || (nBadAnswer > 3))  
+            {                             
+                msrCurTask = TASK_MSR_CLOSURE;     
+                nBadAnswer++;
+                break;
+            }
         break;
         case TASK_MSR_SAVE:   
 //            if (fListenOrSend == 2)
@@ -429,17 +422,17 @@ bool MeasureMain()
            if (nParseAns == TRUE)
             {                      
                 nNoDataCnt = 0;
-                nCycles = 0;    
+                nRetry = 0;    
                 nBadAnswer = 0;
                 AnswerReceiver();   
                 SavePhytechData();  
             }   
             else     
-                if (nParseAns == FALSE)      
-                {
-                    nBadAnswer++;
-                }   
-                else
+//                if (nParseAns == FALSE)      
+//                {
+//                    nBadAnswer++;
+//                }   
+//                else
                     if (nParseAns == NO_DATA)
                         nNoDataCnt++;       
         break;

@@ -13,7 +13,7 @@
 #include "Pump_manager.h"
 #include "RS485_Manager.h"
 
-#define ISRAEL_QUICK_CONNECT
+//#define ISRAEL_QUICK_CONNECT
 //#define SMART_SERVER
 
 #define RAN_3G  1
@@ -229,7 +229,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',6, YEAR, 22};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',6, YEAR, 23};   //__BUILD__
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 

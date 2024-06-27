@@ -134,7 +134,15 @@
             9. nextCmd - var instead of pointer
             10. reset EZR if hasnt got data for an hour or nBadAnswer - init it when parse is ok, increase when failed. after 10 times failed in a row - reset EZR. 
             11. if get task command 8 - reset CBU - send reset command to CBU
-            U.5.24.20
+            U.5.24.20 
+06/2024     1. CheckPumpFitStatus - fix bug check g_bCBUPumpState[0] instead of g_bCBUPumpState[i]
+            2. add DebugEZR for debug ezr comunication
+            3. ParseValveCommandsWithDelay - fix bug of wrong index
+            U.6.24.22    
+25/06/2024  2. replace nCycles var with nRetry
+            3. after 3 retry - quit
+            4. after 10 quits - reset EZR
+
             
              
 
