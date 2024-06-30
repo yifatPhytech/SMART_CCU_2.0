@@ -141,8 +141,13 @@
             U.6.24.22    
 25/06/2024  2. replace nCycles var with nRetry
             3. after 3 retry - quit
-            4. after 10 quits - reset EZR
-
+            4. after 10 quits - reset EZR       
+            U.6.24.23
+27/06/2024  instead of 99:99 as start now sign, if get -99 as cycles it a sign to start now or extend current irrigation. in that case - instead of getting start 
+            time app gets end time and calc duration from it.
+            same for both valves & pumps.
+            U.6.24.24
+            
             
              
 

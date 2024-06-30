@@ -254,96 +254,6 @@ BYTE GetVCUIndex(unsigned long Id)
     return MAX_CMD;
 }
 
-/*void RemoveVCU(unsigned long Id)
-{
-    BYTE i;    
-    i = GetVCUIndex(Id) ;
-    #ifdef DebugMode
-    SendDebugMsg("\r\nRemove VCU ID \0");    
-    PrintNum(Id);
-    SendDebugMsg("\r\nindex:\0");    
-    PrintNum(i);    
-    #endif DebugMode   
-    if (i < MAX_CMD)
-        InitVlvCmd(i);
-} */
-
-
-// 1 if first timestamp is later than 2nd
-// 2 if 2nd timestamp is later than 1st
-//0 if both timestamps equal
-/*void CalcPumpEndTime()
-{
-    DateTime dt;      
-    BYTE i, n = 0;
-    dt = g_curTime;     
-    
-    if (IsPumpCmd() == TRUE)
-        return;
-
-    for (i = VCU1; i < MAX_CMD; i++)       
-    {               
-        if (vlvCmdArr[i].vlvStatus == STATUS_VCU_ON)    
-        {
-            if (GetLaterTimestamp(dt, vlvCmdArr[i].stopTimeStamp) == 2)     
-                dt = vlvCmdArr[i].stopTimeStamp;    
-            n++;
-        }
-    }     
-    g_PumpCloseTime = dt; 
-    #ifdef DebugMode   
-    SendDebugMsg("CalcPumpEndTime ");
-    #endif DebugMode
-    if ((n == 0) && (g_bMainPumpOpen == TRUE))
-        CloseMainPump(0);
-}
-    */
-//void CalcEndTime(BYTE index)
-//{
-////    DateTime dt;      
-//    unsigned int  totalIrr;
-////    dt = g_curTime;  
-//                  
-//    totalIrr = ((vlvCmdArr[index].cmdData.iDuration + vlvCmdArr[index].cmdData.offTime) * vlvCmdArr[index].cmdData.cycles) - vlvCmdArr[index].cmdData.offTime;
-////    tmp = vlvCmdArr[index].cmdData.startTime.minute + totalIrr;    
-//    vlvCmdArr[index].stopTimeStamp = GetTimeAfterDelay(totalIrr);
-///*     #ifdef DebugMode   
-//    SendDebugMsg("minutes+duration: \0");     
-//    PrintNum(tmp);
-//#endif DebugMode       
-//    if (tmp < 60)
-//        dt.minute = tmp;    
-//    else
-//        {              
-//            dt.minute = tmp % 60;//dt.minute % 60; 
-//            tmp = tmp / 60;
-//            tmp += dt.hour;
-//            if (tmp < 24)
-//                dt.hour = tmp;
-//            else
-//            {
-//                dt.day += tmp / 24;
-//                dt.hour = tmp % 24;
-//                if (dt.day > DAYS_EACH_MONTH[dt.month-1])
-//                {
-//                    dt.day -= DAYS_EACH_MONTH[dt.month-1];
-//                    dt.month++;
-//                    if (dt.month > 12)
-//                    {
-//                        dt.month = 1;
-//                        dt.year++;    
-//                    }
-//                } 
-//            }
-//        }         
-//    #ifdef DebugMode   
-//    SendDebugMsg("\r\nCalcEndTime: \0");   
-////    PrintTime(dt);
-//#endif DebugMode    
-//    vlvCmdArr[index].stopTimeStamp = dt;        */
-//    CalcPumpEndTime();     
-//}
-
 unsigned long CalcScndsToStart(Time strtTime)
 {
     int iMnt = 0;
@@ -374,6 +284,31 @@ unsigned long CalcScndsToStart(Time strtTime)
     
     return l;  
       // todo - if start time is later   
+}
+
+int CalcDuration(Time endTime)
+{
+    int iMnt = 0;
+    int t1, t2;   
+                  
+    t1 = (g_curTime.hour * 60) + g_curTime.minute;
+    t2 = (endTime.hour * 60) + endTime.minute;  
+  
+    if (t1 == t2)
+        return 0;  
+    iMnt = t2 - t1;    
+    if (iMnt < 0)
+        iMnt += 1440;
+    #ifdef DebugMode  
+        SendDebugMsg("\r\nt1 =  \0");
+        PrintNum(t1);      
+        SendDebugMsg("\r\nt2 =  \0");
+        PrintNum(t2);      
+        SendDebugMsg("\r\niMnt: \0");
+        PrintNum(iMnt);   
+        #endif DebugMode    
+   
+    return iMnt;  
 }
 
 BYTE IsTimeStartIrg(Time strtTime)
@@ -434,78 +369,8 @@ void CheckVCUStatus()
                 else
                     bIsvlvOpen = 1;                 
             } 
-    }   
-          
-    // if pump doesnt has its own command
-/*    if (CheckPumpStatus() == 0)   
-    {                    
-        // if pump is off and should be on    
-        if ((bIsvlvOpen == 1) && (g_bMainPumpOpen == FALSE))
-            OpenMainPump(TRUE);    
-        else
-            //if pump is on but should be close
-            if (g_bMainPumpOpen == TRUE)  
-            {         
-                if ((GetLaterTimestamp(g_curTime, g_PumpCloseTime) != 2) || (bIsvlvOpen == 0)) 
-                    CloseMainPump(0); 
-            }   
-    }    */ 
+    }             
 }
-
-/*void CalcEndTime(BYTE index)
-{
-    DateTime dt;      
-    unsigned int tmp;
-    BYTE iMnt2Add;
-    dt = g_curTime;  
-//    dt.year = 21;
-//    dt.month = 11;
-//    dt.day = 30;
-//    dt.hour = 22;
-//    dt.minute = 20;
-
-    tmp = dt.minute + vlvCmdArr[index].iDuration;  
-//    if (vlvCmdArr[index].nDelayOpen < 0)  
-//    {
-//        iMnt2Add = (vlvCmdArr[index].nDelayOpen * -1) / 60;
-//        tmp += iMnt2Add;
-//    }
-        
-    if (tmp < 60)
-        dt.minute = tmp;    
-    else
-        {              
-            dt.minute = tmp % 60;//dt.minute % 60; 
-            tmp = tmp / 60;
-            tmp += dt.hour;
-            if (tmp < 24)
-                dt.hour = tmp;
-            else
-            {
-//                dt.day += tmp / 24;
-                dt.hour = tmp % 24;
-//                if (dt.day > DAYS_EACH_MONTH[dt.month-1])
-//                {
-//                    dt.day = 1;
-//                    dt.month++;
-//                    if (dt.month > 12)
-//                    {
-//                        dt.month = 1;
-//                        dt.year++;    
-//                    }
-//                } 
-            }
-        }         
-    #ifdef DebugMode   
-    SendDebugMsg("\r\nCalcEndTime\0");     
-    PrintNum(dt.year);
-    PrintNum(dt.month);
-    PrintNum(dt.day);
-    PrintNum(dt.hour);
-    PrintNum(dt.minute);
-#endif DebugMode   
-    vlvCmdArr[index].stopTimeStamp = dt;  
-}  */
 
 void UpdateVCUStatus(unsigned long id, /*BYTE stat,*/ BYTE situation, BYTE extMsg)
 {
@@ -587,7 +452,7 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
 {
     BYTE index;     
 //    NextIrrigation* pNxtIrg = NULL;      
-    Time t, t1;
+    Time t, t1, t2;
     unsigned long n1, n2;    
     BYTE bIsNextIrg = FALSE;
 
@@ -619,8 +484,11 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
 //    Myprintf("index of VCU: %d\0", index);
 //    #endif DebugMode    
     // if server send start time is 25:00 it means start now  
-    if (((startHour == 99) && (startMin == 99)) && (dur <= MAX_IRRIGATION_MNT)) 
+//    if (((startHour == 99) && (startMin == 99)) && (dur <= MAX_IRRIGATION_MNT)) 
+    if ((cycles == 0x9D)  && (dur <= MAX_IRRIGATION_MNT)) //  if command should start now and end on "start time"
     {      
+        t2.hour = startHour;
+        t2.minute = startMin;                                       
         startHour = g_curTime.hour;                            
         startMin = g_curTime.minute;
         if (dur > 0) 
@@ -668,12 +536,20 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
             bIsNextIrg = TRUE;  
     }
     if (bIsNextIrg == FALSE)    
-    {
-        vlvCmdArr[index].cmdData.iDuration = dur;     
+    {                                             
         vlvCmdArr[index].cmdStatus = STATUS_CMD_IN;   
         vlvCmdArr[index].cmdData.startTime = t; 
-        vlvCmdArr[index].cmdData.offTime = offTime;    
-        vlvCmdArr[index].cmdData.cycles = cycles;    
+        vlvCmdArr[index].cmdData.offTime = offTime;      
+        if (cycles != 0x9D)
+        {
+            vlvCmdArr[index].cmdData.iDuration = dur;     
+            vlvCmdArr[index].cmdData.cycles = cycles;
+        }  
+        else
+        {                                                        
+            vlvCmdArr[index].cmdData.iDuration = CalcDuration(t2);
+            vlvCmdArr[index].cmdData.cycles = 0;
+        }
         vlvCmdArr[index].cmdData.index = cmdIndex;
         if (vlvCmdArr[index].cmdData.startTime.minute > 59)
         {         

@@ -103,4 +103,6 @@ BYTE IsTimeStartIrg(Time strtTime);
 
 BYTE GetVlvCnt();
 
+int CalcDuration(Time endTime);
+
 #endif __VALVE_MNG_H

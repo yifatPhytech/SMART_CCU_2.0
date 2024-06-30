@@ -21,7 +21,7 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
 
 void CheckPumpStatus();
 
-DateTime GetTimeAfterDelay(int delay);
+//DateTime GetTimeAfterDelay(int delay);
 
 void InitPumpCmdUnit();
 

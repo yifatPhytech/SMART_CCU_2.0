@@ -130,10 +130,12 @@ DateTime GetTimeAfterDelay(int delay)
     dt = g_curTime; 
                   
     tmp = g_curTime.minute + delay;  
-     #ifdef DebugMode   
-    SendDebugMsg("minutes+duration: \0");     
+    #ifdef DebugMode   
+    SendDebugMsg("\r\ndelay \0");     
+    PrintNum(delay);
+    SendDebugMsg("\r\nminutes+duration: \0");     
     PrintNum(tmp);
-#endif DebugMode       
+    #endif DebugMode       
     if (tmp < 60)
         dt.minute = tmp;    
     else
@@ -168,9 +170,9 @@ void OpenPumpCmd(BYTE pmpIdx)
     pumpAsVlv[pmpIdx].stopTimeStamp = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.iDuration);   
 //    CalcPumpCmdEndTime();     
     pumpAsVlv[pmpIdx].cmdData.cycles--; 
-     #ifdef DebugMode   
-    SendDebugMsg("\r\nCalc pump EndTime: \0");   
-    #endif DebugMode   
+//     #ifdef DebugMode   
+//    SendDebugMsg("\r\nCalc pump EndTime: \0");   
+//    #endif DebugMode   
 }
 
 void ClosePumpCmd(BYTE pmpIdx)
@@ -220,7 +222,7 @@ void CheckPumpStatus()
             #endif DebugMode
             if (tmp == 1) //(tmp < 60)               
             {                            
-                OpenPumpCmd(i);
+                OpenPumpCmd(i);    
             }                
         }     
         else
@@ -249,7 +251,7 @@ unsigned int GetPumpCmdIdx(BYTE pmpIdx)
 
 BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYTE startMin, unsigned int cmdIndex, BYTE pumpIdx)
 {
-    Time t, t1;
+    Time t, t1, t2;
     unsigned long n1, n2;    
     BYTE bIsNextIrg = FALSE;
          
@@ -259,11 +261,13 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
         return 0;
     GetRealTime();   
     SavePumpActionData(6, 1, cmdIndex, pumpIdx); 
-    // if server send start time is 25:00 it means start now  
-    if ((startHour == 99) && (startMin == 99)) 
+    // if server send start time is cycles = -99 it means start now, end time 0is in start time
+    if (cycles == 0x9D) //((startHour == 99) && (startMin == 99)) 
     {      
+        t2.hour = startHour;
+        t2.minute = startMin; 
         startHour = g_curTime.hour;                            
-        startMin = g_curTime.minute;
+        startMin = g_curTime.minute;      
     }   
     t.hour = startHour;
     t.minute = startMin;                                       
@@ -275,27 +279,26 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
         t1.hour = pumpAsVlv[pumpIdx].stopTimeStamp.hour;
         t1.minute = pumpAsVlv[pumpIdx].stopTimeStamp.minute;        
         n2 = CalcScndsToStart(t1); 
-//        #ifdef DebugMode  
-//        SendDebugMsg("\r\nseconds to start next irg: \0");
-//        PrintNum(n1);      
-//        SendDebugMsg("\r\nstop time: \0");
-//        PrintNum(t1.hour);          
-//        PrintNum(t1.minute);          
-//        SendDebugMsg("\r\nseconds to end cur irg: \0");
-//        PrintNum(n2);  
-//        #endif DebugMode   
         // if it later -        
         if (n1 > n2)
             bIsNextIrg = TRUE;  
     }
     if (bIsNextIrg == FALSE)    
     {
-        pumpAsVlv[pumpIdx].cmdData.iDuration = dur;     
         pumpAsVlv[pumpIdx].cmdData.startTime = t; 
         pumpAsVlv[pumpIdx].cmdData.offTime = offTime;    
-        pumpAsVlv[pumpIdx].cmdData.cycles = cycles;  
         if (cycles == 0)
-            pumpAsVlv[pumpIdx].cmdData.cycles = 1;      
+            pumpAsVlv[pumpIdx].cmdData.cycles = 1;   
+        if (cycles != 0x9D)
+        {
+            pumpAsVlv[pumpIdx].cmdData.iDuration = dur;     
+            pumpAsVlv[pumpIdx].cmdData.cycles = cycles;
+        }  
+        else
+        {                                                        
+            pumpAsVlv[pumpIdx].cmdData.iDuration = CalcDuration(t2);
+            pumpAsVlv[pumpIdx].cmdData.cycles = 1;
+        } 
         pumpAsVlv[pumpIdx].cmdData.index = cmdIndex;    
         pumpAsVlv[pumpIdx].IsCmd4Pump = TRUE;
                   
@@ -305,10 +308,10 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
             CloseMainPump(pumpIdx, TRUE);   
         }
         else
-            if ((startHour == g_curTime.hour) && (startMin == g_curTime.minute))   
+            if (cycles == 0x9D)//((startHour == g_curTime.hour) && (startMin == g_curTime.minute))   
             {
                 //OpenMainPump(TRUE);  
-                OpenPumpCmd(pumpIdx);
+                OpenPumpCmd(pumpIdx);  
             }
     }   
     else
