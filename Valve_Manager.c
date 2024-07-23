@@ -18,6 +18,8 @@
 //#define NOT_ONLY_LIST
 
 #define MAX_SEND_EZR_RETRY  2
+unsigned short DAYS_PER_MONTH[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
 //#define MIN_DELAY_PUMP  (signed char)(-120)
 //#define MAX_DELAY_PUMP  (signed char)120
 
@@ -100,32 +102,81 @@ void InitCmd(CommandData* cmd)
     cmd->index = 0;
 }
 
+//BYTE ClosePumpCmd(BYTE idx)
+//{
+//    DateTime dt;
+//    
+//    if (vlvCmdArr[idx].cmdData.cycles > 0)  
+//    {                       
+//        dt = GetTimeAfterDelay(vlvCmdArr[idx].cmdData.offTime, g_curTime);  
+//        vlvCmdArr[idx].cmdData.startTime.hour = dt.hour;   
+//        vlvCmdArr[idx].cmdData.startTime.minute = dt.minute;     
+//        vlvCmdArr[idx].vlvStatus = STATUS_WAIT_2_START ; 
+//        vlvCmdArr[idx].iExtPrm = 0;
+//        return 1;  
+//    }              
+//    return 0;
+//}
+int GetIrgTotalTime(CommandData cmd)
+{
+    int totalTime;
+    totalTime = (cmd.cycles * (cmd.iDuration + cmd.offTime)) - cmd.offTime;
+    return totalTime;
+}
+
+DateTime CalcStopTime(Time startTime, int dur)
+{
+    int tNow, tLater; 
+    DateTime stopTime;
+    stopTime = g_curTime;  
+    // first calc start time (include date)             
+    stopTime.minute = startTime.minute; 
+    stopTime.hour = startTime.hour;   
+   
+    tNow = (g_curTime.hour * 60) + g_curTime.minute;
+    tLater = (startTime.hour * 60) + startTime.minute;  
+  
+    if (tNow > tLater)     // if now is greater than start time - its next day.
+    {
+       stopTime.day++;
+        if (stopTime.day > DAYS_PER_MONTH[stopTime.month-1])
+        {
+            stopTime.day = 1;
+            stopTime.month++;
+            if (stopTime.month > 12)
+            {
+                stopTime.month = 1;
+                stopTime.year++;    
+            }
+        } 
+    }          
+    // now calc stop time
+   stopTime = GetTimeAfterDelay(dur ,stopTime); 
+   return stopTime;     
+}
+
 void CloseValve(BYTE index)
 {
     #ifdef DebugMode  
     SendDebugMsg("\r\nClose valve \0");   
     #endif DebugMode 
+//    if (ClosePumpCmd(index) == 1)
+//        return;
     vlvCmdArr[index].vlvStatus = STATUS_VCU_OFF;    
     vlvCmdArr[index].iExtPrm = FALSE;               
     InitCmd(&(vlvCmdArr[index].cmdData));
-//    vlvCmdArr[index].iDuration = 0;
-//    vlvCmdArr[index].offTime = 0;
-//    vlvCmdArr[index].cycles = 0;
-//    vlvCmdArr[index].index = 0;
     if (vlvCmdArr[index].nextIrg.iDuration == 0)    //if (vlvCmdArr[index].nextIrg == NULL) 
         return;
       
-    vlvCmdArr[index].cmdData = vlvCmdArr[index].nextIrg;
-//    vlvCmdArr[index].iDuration = vlvCmdArr[index].nextIrg->iDuration;
-//    vlvCmdArr[index].startTime = vlvCmdArr[index].nextIrg->startTime;     
+    vlvCmdArr[index].cmdData = vlvCmdArr[index].nextIrg; 
+    vlvCmdArr[index].stopTimeStamp = CalcStopTime(vlvCmdArr[index].cmdData.startTime, GetIrgTotalTime(vlvCmdArr[index].cmdData));   
     vlvCmdArr[index].cmdStatus = STATUS_CMD_IN;   
     vlvCmdArr[index].nSec2Start = CalcScndsToStart(vlvCmdArr[index].cmdData.startTime) * 10;
     #ifdef DebugMode  
     SendDebugMsg("set next irrigation in \0");
     PrintNum(vlvCmdArr[index].nSec2Start);  
     #endif DebugMode 
-//    free(vlvCmdArr[index].nextIrg);
-    vlvCmdArr[index].nextIrg.iDuration = 0; // = NULL;//
+    vlvCmdArr[index].nextIrg.iDuration = 0; // = NULL;//   
 }
 
 void CloseAllValve()
@@ -440,8 +491,7 @@ void UpdateVCUStatus(unsigned long id, /*BYTE stat,*/ BYTE situation, BYTE extMs
         CloseValve(index);    
 //        CalcPumpEndTime();
     }
-    if ((vlvCmdArr[index].vlvStatus == STATUS_WAIT_2_START) && 
-    ((situation == IRG_MSG_INIT) || (situation == IRG_MSG_OFF)))     
+    if ((vlvCmdArr[index].vlvStatus == STATUS_WAIT_2_START) && ((situation == IRG_MSG_INIT) || (situation == IRG_MSG_OFF)))     
     {               
         CloseValve(index);    
 //        CalcPumpEndTime();
@@ -543,12 +593,19 @@ BYTE InsertExtNewCmd(unsigned long id,  unsigned int dur, BYTE offTime, BYTE cyc
         if (cycles != 0x9D)
         {
             vlvCmdArr[index].cmdData.iDuration = dur;     
-            vlvCmdArr[index].cmdData.cycles = cycles;
+            vlvCmdArr[index].cmdData.cycles = cycles;   
+            vlvCmdArr[index].stopTimeStamp = CalcStopTime(t, GetIrgTotalTime(vlvCmdArr[index].cmdData));
         }  
         else
-        {                                                        
-            vlvCmdArr[index].cmdData.iDuration = CalcDuration(t2);
-            vlvCmdArr[index].cmdData.cycles = 0;
+        {                     
+            if (dur != 0)          
+            {                         
+                vlvCmdArr[index].cmdData.iDuration = CalcDuration(t2);       
+                vlvCmdArr[index].stopTimeStamp = CalcStopTime(t2, 0);
+            }     
+            else
+                vlvCmdArr[index].cmdData.iDuration = 0;
+            vlvCmdArr[index].cmdData.cycles = 1;
         }
         vlvCmdArr[index].cmdData.index = cmdIndex;
         if (vlvCmdArr[index].cmdData.startTime.minute > 59)

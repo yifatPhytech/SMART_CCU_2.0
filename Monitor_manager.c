@@ -12,7 +12,7 @@
 #define SET_REQUEST 1
 
 #define REQ_ID      0           // LOGGER id
-#define REQ_TIME    40
+//#define REQ_TIME    40
 #define REQ_IP      41
 #define REQ_PORT    42
 #define REQ_APN     43
@@ -23,8 +23,8 @@
 #define REQ_CPD     48  //CONNECTS PER DAY
 #define REQ_CI      49  //CONNECTS INTERVAL
 #define REQ_BTR     55
-#define REQ_RSSI    56
-#define REQ_TIMEZONE     57
+//#define REQ_RSSI    56
+//#define REQ_TIMEZONE     57
 #define REQ_VER     58
 //#define REQ_NUM_SEN     59
 #define REQ_DISCNCT   61
@@ -116,15 +116,15 @@ void ExecuteGetCommand()
             len = 4;
             cpu_e2_to_MemCopy( &ComBuf[8], &AppEepromData.eLoggerID[0], 4);
         break;
-        case REQ_TIME:
-            GetRealTime();
-            ComBuf[8] = g_curTime.year;// =readClockBuf[0]; //year
-            ComBuf[9] = g_curTime.month;// readClockBuf[1]; //month
-            ComBuf[10] = g_curTime.day;// =  readClockBuf[2]; //day
-            ComBuf[11] = g_curTime.hour;// = readClockBuf[4]; //hour
-            ComBuf[12] = g_curTime.minute;// readClockBuf[5]; //minute
-            len = 5;
-        break;
+//        case REQ_TIME:
+//            GetRealTime();
+//            ComBuf[8] = g_curTime.year;// =readClockBuf[0]; //year
+//            ComBuf[9] = g_curTime.month;// readClockBuf[1]; //month
+//            ComBuf[10] = g_curTime.day;// =  readClockBuf[2]; //day
+//            ComBuf[11] = g_curTime.hour;// = readClockBuf[4]; //hour
+//            ComBuf[12] = g_curTime.minute;// readClockBuf[5]; //minute
+//            len = 5;
+//        break;
         case REQ_IP:
             cpu_e2_to_MemCopy( &ComBuf[8], AppEepromData.eIPorURLval1, 32);
             len = 32;
@@ -166,15 +166,15 @@ void ExecuteGetCommand()
             ComBuf[9] = (unsigned char)((iVoltage >> 8) & 0xFF);     //address high
              len = 2;
         break;
-        case REQ_RSSI:
-            ComBuf[8] = (unsigned char)(rssi_val) ;                 //address low
-            ComBuf[9] = (unsigned char)((rssi_val >> 8) & 0xFF);     //address high
-            len = 2;
-        break;
-        case REQ_TIMEZONE:
-            int2bytes(AppEepromData.eTimeZoneOffset, &ComBuf[8]);
-            len = 2;
-        break;
+//        case REQ_RSSI:
+//            ComBuf[8] = (unsigned char)(rssi_val) ;                 //address low
+//            ComBuf[9] = (unsigned char)((rssi_val >> 8) & 0xFF);     //address high
+//            len = 2;
+//        break;
+//        case REQ_TIMEZONE:
+//            int2bytes(AppEepromData.eTimeZoneOffset, &ComBuf[8]);
+//            len = 2;
+//        break;
         case REQ_VER:
             cpu_flash_to_MemCopy( &ComBuf[8], RomVersion, 4);
             len = 4;
@@ -226,14 +226,14 @@ void ExecuteSetCommand()
         case REQ_ID:
                 MemCopy_to_cpu_e2(&AppEepromData.eLoggerID[0], &RxUart1Buf[9], 4);
         break;
-        case REQ_TIME:
-            MemCopy( clockBuf, &RxUart1Buf[9], 3 ); //copy year month day
-            MemCopy( &clockBuf[4], &RxUart1Buf[12], 2 );  //copy hour minute
-            if(SetRealTime() == FAILURE)
-            {
-                setResult = FALSE;
-            }
-        break;
+//        case REQ_TIME:
+//            MemCopy( clockBuf, &RxUart1Buf[9], 3 ); //copy year month day
+//            MemCopy( &clockBuf[4], &RxUart1Buf[12], 2 );  //copy hour minute
+//            if(SetRealTime() == FAILURE)
+//            {
+//                setResult = FALSE;
+//            }
+//        break;
         case REQ_IP:
             MemCopy_to_cpu_e2(AppEepromData.eIPorURLval1, &RxUart1Buf[9], 32);
         break;
@@ -281,13 +281,13 @@ void ExecuteSetCommand()
             else
                 setResult = FALSE;
         break;
-        case REQ_TIMEZONE:
-            t = bytes2int(&RxUart1Buf[9]);
-            if ((t >= -720) && (t <= 720))
-                AppEepromData.eTimeZoneOffset = t;
-            else
-                setResult = FALSE;
-        break;
+//        case REQ_TIMEZONE:
+//            t = bytes2int(&RxUart1Buf[9]);
+//            if ((t >= -720) && (t <= 720))
+//                AppEepromData.eTimeZoneOffset = t;
+//            else
+//                setResult = FALSE;
+//        break;
         case REQ_VER:    //NOT AVAILABLE TO SET
             break;
         

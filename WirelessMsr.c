@@ -292,7 +292,7 @@ void SavePhytechData()
                 }                  
                 // if got HW error 2-
                 if ((RxUart1Buf[index + EXT_MSG_POS] & IRG_MSG_HW_ERROR_2) != 0)    
-                    SaveVcuData(&RxUart1Buf[index+ID], msgLen-2, 12); 
+                    SaveVcuData(&RxUart1Buf[index+ID], msgLen-2, 12);
             }    
             if (RxUart1Buf[index + MSG_TYPE_POS] != 0)
                 SaveVcuData(&RxUart1Buf[index+ID], msgLen-2, RxUart1Buf[index + MSG_TYPE_POS]);  

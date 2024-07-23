@@ -11,7 +11,10 @@ typedef struct _PumpUnit
     CommandData*    nextIrg;
 }PumpUnit;
 
+
 extern BYTE g_bMngPumpNow;
+
+DateTime GetTimeAfterDelay(int delay, DateTime dt);
 
 BYTE GetPumpStat();
 

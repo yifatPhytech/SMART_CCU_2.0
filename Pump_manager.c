@@ -5,13 +5,13 @@
 #include "Rtc_Manager.h"
 #include "data_manager.h"
 
+unsigned short DAYS_EACH_MONTH[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 PumpUnit pumpAsVlv[2];
 
 BYTE g_bMngPumpNow;
 static BYTE g_cmdPumFailed = 0;
 
-const unsigned short DAYS_EACH_MONTH[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 BYTE GetPumpStat()
 {
@@ -123,13 +123,14 @@ void TestMainPump(BYTE nDur)
     CloseMainPump(0, 1);
 }
 
-DateTime GetTimeAfterDelay(int delay)
+DateTime GetTimeAfterDelay(int delay, DateTime dt)
 {
     int tmp; 
-    DateTime dt;      
-    dt = g_curTime; 
+//    DateTime dt;      
+//    dt = g_curTime; 
                   
-    tmp = g_curTime.minute + delay;  
+//    tmp = g_curTime.minute + delay;  
+    tmp = dt.minute + delay;  
     #ifdef DebugMode   
     SendDebugMsg("\r\ndelay \0");     
     PrintNum(delay);
@@ -167,7 +168,7 @@ DateTime GetTimeAfterDelay(int delay)
 void OpenPumpCmd(BYTE pmpIdx)
 {
     OpenMainPump(pmpIdx, TRUE);
-    pumpAsVlv[pmpIdx].stopTimeStamp = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.iDuration);   
+    pumpAsVlv[pmpIdx].stopTimeStamp = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.iDuration, g_curTime);   
 //    CalcPumpCmdEndTime();     
     pumpAsVlv[pmpIdx].cmdData.cycles--; 
 //     #ifdef DebugMode   
@@ -193,7 +194,7 @@ void ClosePumpCmd(BYTE pmpIdx)
     }            
     else         
     {
-        dt = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.offTime);  
+        dt = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.offTime, g_curTime);  
         pumpAsVlv[pmpIdx].cmdData.startTime.hour = dt.hour;   
         pumpAsVlv[pmpIdx].cmdData.startTime.minute = dt.minute;   
     }
@@ -212,18 +213,21 @@ void CheckPumpStatus()
     SendDebugMsg("\r\nCheck pump status ");     
     PrintNum(i);
     #endif          
-        if (pumpAsVlv[i].IsPumpOpen == FALSE)
-        {             
-            tmp = IsTimeStartIrg(pumpAsVlv[i].cmdData.startTime);   
+        if (pumpAsVlv[i].IsPumpOpen == FALSE)   
+        {
+            if (pumpAsVlv[i].IsCmd4Pump == TRUE)
+            {                     
+                tmp = IsTimeStartIrg(pumpAsVlv[i].cmdData.startTime);   
 
-            #ifdef DebugMode 
-            SendDebugMsg("\r\nSec 2 start pump \0");     
-            PrintNum(tmp);  
-            #endif DebugMode
-            if (tmp == 1) //(tmp < 60)               
-            {                            
-                OpenPumpCmd(i);    
-            }                
+                #ifdef DebugMode 
+                SendDebugMsg("\r\nSec 2 start pump \0");     
+                PrintNum(tmp);  
+                #endif DebugMode
+                if (tmp == 1) //(tmp < 60)               
+                {                            
+                    OpenPumpCmd(i);    
+                }     
+            }           
         }     
         else
         {        
@@ -295,8 +299,9 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
             pumpAsVlv[pumpIdx].cmdData.cycles = cycles;
         }  
         else
-        {                                                        
-            pumpAsVlv[pumpIdx].cmdData.iDuration = CalcDuration(t2);
+        {       
+            if (dur != 0)                                                 
+                pumpAsVlv[pumpIdx].cmdData.iDuration = CalcDuration(t2);
             pumpAsVlv[pumpIdx].cmdData.cycles = 1;
         } 
         pumpAsVlv[pumpIdx].cmdData.index = cmdIndex;    
