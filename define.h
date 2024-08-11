@@ -159,8 +159,8 @@ typedef struct
 
 #define MAX_INT         32767
 #define MIN_INT         0x8000
-#define BTR_FULL_LIMIT     3600
-#define BTR_EMPTY_LIMIT     3500
+//#define BTR_FULL_LIMIT     3600
+#define BTR_EMPTY_LIMIT     3700
 #define BTR_STATUS_FULL    0
 #define BTR_STATUS_EMPTY    1
 
@@ -324,6 +324,8 @@ typedef struct
 #ifdef BRD1000_V3
 #define LED_ON() (PORTB.6 = 1);       
 #define LED_OFF() (PORTB.6 = 0);    
+
+#define CUT_OFF() (PORTB.0 = 0);
 #endif BRD1000_V3  
 
 #define WIRELESS_PWR_ENABLE() (PORTA.6 = 1);        //##

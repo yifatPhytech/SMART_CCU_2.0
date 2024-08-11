@@ -25,6 +25,7 @@ typedef enum _RS485Command
     CMD_WU,  
     CMD_GET_FOTA_FAIL_RSN,
     CMD_LED,         
+    CMD_GET_MSG = 16, 
     CMD_Count
 } ERS485Command;
 
@@ -41,7 +42,7 @@ extern char g_bCBUPumpState[2];
 
 char SendRecRS485(ERS485Command cmd, int prm);
 
-void RecSendRS485();
+//void RecSendRS485();
 
 void InitCom(unsigned char bSend);
 

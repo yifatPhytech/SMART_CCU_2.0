@@ -25,7 +25,7 @@ typedef struct
 eeprom _tagAPPEEPROM AppEepromData;// = {{0xED,0x3A,0x0B,0x00}, 1, 6, 4, 1, 0, 0, 0, 15, 0, "01#0", "425#", "proxy.phytech.com#00000000000000", "1018", "JTM2M#00000000000000000000000000"};
 //                                      0        4  5  6  7  9  10 12 14  15  16
 
-flash unsigned char fEZRUpdateAddress[] = "bootloader.phytech.com@";
+//flash unsigned char fEZRUpdateAddress[] = "bootloader.phytech.com@";
 bit bExtReset;
 bit bReset = 0;
 bit bWaitForMonitorCmd;
@@ -59,7 +59,7 @@ unsigned int nCBUFw2Upg = 0;
 //unsigned int g_sec2HndlPump;
 //unsigned int nTicks;
 //int NextByteIndex;
-int BytesToSend;
+//int BytesToSend;
 int iVoltage;
 int nTimeCnt = -1;
 //int g_timeFromLastConnect;

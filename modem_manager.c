@@ -155,7 +155,7 @@ BYTE nErrorOnConnect;
 BYTE prmSentOK;
 BYTE vlvSentOK = FALSE;
 BYTE bSendPrms;
-extern int BytesToSend;
+//extern int BytesToSend;
 BYTE ModemResponse;
 //extern unsigned int objToMsr;
 extern bit bReset;
@@ -229,12 +229,12 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',7, YEAR, 23};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',8, YEAR, 21};   //__BUILD__
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
-extern flash unsigned char fEZRUpdateAddress[];// = "phytech.dev.valigar.co.il@";
+//extern flash unsigned char fEZRUpdateAddress[];// = "phytech.dev.valigar.co.il@";
             
 const BYTE BAUD_RATE_HIGH[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 const BYTE BAUD_RATE_LOW[]  = {0x01, 0x03, 0x05, 0x0B, 0x17, 0x2F, 0xBF/*, 0x5F, 0x0F*/};              //0x5F = 2400     0x0F = 14400
@@ -1753,14 +1753,15 @@ char UpdateParam()
             fSwUpdate = bytes2int(new_data_buf);     
             // only if battery is full enough start with FOTA. otherwize - dont even confirm getting the TASK 
             //if (btrStatus != BTR_STATUS_FULL)
-            if ((iVoltage < BTR_FULL_LIMIT) || (IsPumpBusy() == TRUE))
+            if ((btrStatus == BTR_STATUS_EMPTY) || (IsPumpBusy() == TRUE))
             {   
                 fSwUpdate = 0;
                 res = FALSE;
             }
         break;  
         case UPDATE_VLV_LST:       
-            g_bVlvListUpdated = true;   
+            g_bVlvListUpdated = true;     
+            g_bSendList = TRUE;
             res = UpdateVlvList();
         break; 
         case UPDATE_CBU_CNFG2:      

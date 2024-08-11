@@ -13,6 +13,7 @@ typedef struct _PumpUnit
 
 
 extern BYTE g_bMngPumpNow;
+extern PumpUnit pumpAsVlv[2];
 
 DateTime GetTimeAfterDelay(int delay, DateTime dt);
 

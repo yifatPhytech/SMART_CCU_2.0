@@ -147,6 +147,24 @@
             time app gets end time and calc duration from it.
             same for both valves & pumps.
             U.6.24.24
+02/07/2024  fix bug of stop irrigation - when gets -99 cycles and duration is 0 - do not calc duration by end time but leave it 0.
+            U.7.24.20             
+            fix calculation of stop time - add function CalcStopTime that calculate stop time. use it when gets the command, unless gets stop time.
+            U.7.24.21  
+09/07/2024  fix bug of stop irrigation - when gets -99 cycles and duration is 0 -set d0 to duration.
+            U.7.24.22
+16/07/2024  fix bug of start pump even if doesnt have command.
+            U.7.24.23       
+05/08/2024  1. change protocol with CBU when CBU initiates message to CCU: first - CBU turns on RTS 2nd- when CCU availeable - it sends general msg to CBU
+            3rd - CBU send what it wants (alert\ config parameters\get param...) 4th - CCU sends response to the CBU request.  
+            2. when CCU opens pump - it always sends the duration of the current irrigation, so CBU will know when it should close even if something went wrong. 
+            because of this - do not switch off pumps on reset.     
+            3. when gets task of update vcu list - turn on flag g_bSendList to send list back to server.
+            4. use same bootloader adress to atmel FOTA & EZR FOTA.    
+            5. add energy managment: 1> if 10 minutes in a row there was no power from MCU - send alert 101. later send this alert once in an our.
+               2> when CCU battery gets to 3700 - send alert message 102 and cut off power. 
+            U.8.24.21
+            
             
             
              

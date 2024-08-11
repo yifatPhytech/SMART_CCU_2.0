@@ -6,16 +6,17 @@
 #include "Valve_Manager.h"
 #include "interrupts.h"
 #include "HW_manager.h"
+#include "modem_manager.h"
 
 static SProtoMessage message;
 BYTE ezrState;
 extern long ezrVersion;
 extern eeprom _tagAPPEEPROM AppEepromData;
-extern flash unsigned char fEZRUpdateAddress[];
+//extern flash unsigned char fEZRUpdateAddress[];
 extern int nTimeCnt;
 extern bit bWait4WLSensor;
 extern char ComBuf[MAX_RX1_BUF_LEN];
-extern int BytesToSend;
+//extern int BytesToSend;
 //extern unsigned int buffLen;
 extern unsigned int nEzrFw2Upg;
 //extern unsigned int g_sec2HndlPump;
@@ -166,7 +167,7 @@ BYTE PROTOCOL_Task(EProtocolCommand cmd, BYTE bIsMore)
     {
         cpu_e2_to_MemCopy((BYTE*)message.requestFwUpgradeExt.loggerId, AppEepromData.eLoggerID, 4); 
         //copy site   
-        len = CopyFlashToBuf(message.requestFwUpgradeExt.url, fEZRUpdateAddress);
+        len = CopyFlashToBuf(message.requestFwUpgradeExt.url, fSWUpdateAddress);    //fEZRUpdateAddress);
         message.requestFwUpgradeExt.url[len] = '\0';    
         message.requestFwUpgradeExt.fw2upg = nEzrFw2Upg;              
     }        

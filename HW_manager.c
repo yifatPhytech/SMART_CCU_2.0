@@ -37,7 +37,9 @@ extern BYTE btrStatus;
 extern char ComBuf[MAX_RX1_BUF_LEN];
 extern int nTimeCnt;
 extern int iVoltage;
-extern int BytesToSend;
+//extern int BytesToSend;
+BYTE nNoChargeCnt = 0;
+BYTE nMin4ChrgAlrt = 10;
 //
 
 #pragma used+
@@ -183,11 +185,11 @@ void DefineBtrStatus()
     
     if (iVoltage < BTR_EMPTY_LIMIT)         // <3500
         btrStatus = BTR_STATUS_EMPTY;
-    else     
-        if (iVoltage > BTR_FULL_LIMIT)               //>3600
+//    else     
+//        if (iVoltage > BTR_FULL_LIMIT)               //>3600
             btrStatus = BTR_STATUS_FULL; 
-        else             
-            btrStatus = prevBtrStatus;
+//        else             
+//            btrStatus = prevBtrStatus;
 
     #ifdef DebugMode
     SendDebugMsg("\r\nBtr Status= ");
@@ -197,7 +199,8 @@ void DefineBtrStatus()
 
 void WakeUpProcedure(void)
 {
-    BYTE prevBtrStatus = btrStatus;//, btrStatusCng = FALSE;  
+    BYTE prevBtrStatus = btrStatus, pA = 0, pAfull;//, btrStatusCng = FALSE;  
+    int alert;
     
 //    if ((prevMainTask != TASK_SLEEP) && (bExtReset == FALSE))
 //    {         
@@ -234,15 +237,26 @@ void WakeUpProcedure(void)
         InitRTC();    //initiate the clock
         SetRtc24Hour(); //config rtc to am-pm mode
     }          
-//    if (PINA.3 == 0)
-//        SendDebugMsg("\r\nCharging");
-//    else               
-//        SendDebugMsg("\r\nNO Charging");
-//    n = PORTA;        
-    if ((PORTA & (1 << PORTA3)) == 0)
+   
+    if (PINA.3 == 0)                    
+    {
         SendDebugMsg("\r\nCharging");
-    else               
-        SendDebugMsg("\r\nNO Charging");
+        nNoChargeCnt = 0;       
+        nMin4ChrgAlrt = 10;
+    }
+    else                        
+    {
+        SendDebugMsg("\r\nNO Charging");  
+        nNoChargeCnt++;
+        if (nNoChargeCnt >= nMin4ChrgAlrt)
+        {
+            alert = 101;
+            SaveAlertData((unsigned char*)&alert);     
+            nNoChargeCnt = 0;  
+            nMin4ChrgAlrt = 60;
+        } 
+    }  
+
     MeasureBatt();
     DefineBtrStatus();    
     ReadPointers();  
@@ -258,22 +272,22 @@ void WakeUpProcedure(void)
         #endif DebugMode    
 //        gClosePumpDelay = 0;  
         CloseMainPump(0, TRUE);
-        CloseMainPump(1, TRUE);         
+        CloseMainPump(1, TRUE);     
 //        btrStatusCng = TRUE;
     }
-    else
-    {
-        if ((btrStatus != BTR_STATUS_EMPTY) && (prevBtrStatus == BTR_STATUS_EMPTY))     // if battery was empty but no more
-        {                  
-//            btrStatusCng = TRUE;
-            WIRELESS_CTS_ENABLE();
-            WIRELESS_CTS_OFF();
-            WIRELESS_PWR_ENABLE();                                      // switch on wireless
-            #ifdef DebugMode
-            SendDebugMsg("\r\nbattery back normal. enable wireless\0");
-            #endif DebugMode                      
-        }
-    }     
+//    else
+//    {
+//        if ((btrStatus != BTR_STATUS_EMPTY) && (prevBtrStatus == BTR_STATUS_EMPTY))     // if battery was empty but no more
+//        {                  
+////            btrStatusCng = TRUE;
+//            WIRELESS_CTS_ENABLE();
+//            WIRELESS_CTS_OFF();
+//            WIRELESS_PWR_ENABLE();                                      // switch on wireless
+//            #ifdef DebugMode
+//            SendDebugMsg("\r\nbattery back normal. enable wireless\0");
+//            #endif DebugMode                      
+//        }
+//    }     
 }
 
 void GetNextMainTask()
@@ -309,14 +323,20 @@ void GetNextMainTask()
                 mainTask = TASK_EZR_COM;
                 msrCurTask = TASK_NONE;    
 //                fListenOrSend = 1;                        
-            }     
+            }  
+            else
+            {
+                wuAlert = 102;
+                SaveAlertData((unsigned char*)&wuAlert);  
+                InitVarsForConnecting();        
+            }   
         }
         else
         {        
             SaveAlertData((unsigned char*)&wuAlert);      
             SendRecRS485(CMD_GET_CBU_DEF,0);    
-            SendRecRS485(CMD_PUMP1_MNG, PUMP_CMD_OFF);
-            SendRecRS485(CMD_PUMP2_MNG, PUMP_CMD_OFF);
+//            SendRecRS485(CMD_PUMP1_MNG, PUMP_CMD_OFF);
+//            SendRecRS485(CMD_PUMP2_MNG, PUMP_CMD_OFF);
                 
             PrintSensorDef();                                
             mainTask = TASK_MONITOR;
@@ -619,7 +639,9 @@ PCIFR=(0<<PCIF3) | (0<<PCIF2) | (1<<PCIF1) | (0<<PCIF0);
 
     btrStatus = BTR_STATUS_EMPTY;   //SHUTDOUW;
     g_fRS485Call = 0;    
-    g_LockUar1 = FALSE;
+    g_LockUar1 = FALSE;   
+    nNoChargeCnt = 0;  
+    nMin4ChrgAlrt = 10;
 //    g_bMainPumpOpen = FALSE;  
     InitVersiontoUpdt();  
     //todo - remove init id

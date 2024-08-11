@@ -13,6 +13,8 @@ extern char RxUart1Buf[MAX_RX1_BUF_LEN];
 extern unsigned int buffLen;
 extern unsigned int nCntDown;
 extern char DbgBuf[50]; 
+extern int BytesToSend;
+
 
 #define ENABLE_TIMER2()    (TCCR2B=(0<<WGM22) | (1<<CS22) | (1<<CS21) | (1<<CS20));
 #define DISABLE_TIMER2()   (TCCR2B=(0<<WGM22) | (0<<CS22) | (0<<CS21) | (0<<CS20));

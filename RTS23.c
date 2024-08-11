@@ -182,8 +182,12 @@ void main(void)
                     } 
                     bEndOfModemTask = FALSE;  
                     mainTask = TASK_SLEEP;                         
-                    if (btrStatus == BTR_STATUS_EMPTY)    //todo - check
-                        ShutDownModem();                
+                    if (btrStatus == BTR_STATUS_EMPTY)    
+                    {
+                        ShutDownModem(); 
+                        CUT_OFF();
+                        while(1);
+                    }                
                     else
                     {
                         if (SendVlvCmdToEzr() == TRUE)                       
@@ -294,7 +298,7 @@ void main(void)
 //        }             
         if (g_fRS485Call == 2 )
         {                       
-            RecSendRS485();
+            SendRecRS485(CMD_GET_MSG, 0);
             g_fRS485Call = 0;    
         }  
         if (bReset == TRUE)

@@ -53,7 +53,7 @@ extern char ComBuf[MAX_RX1_BUF_LEN];
 //extern char RxUart1Buf[MAX_RX1_BUF_LEN];
 //extern DateTime g_curTime;
 //extern int buffLen;
-extern int BytesToSend;
+//extern int BytesToSend;
 extern int TimeLeftForWaiting;
 extern char clockBuf[7]; 		 //buffer for all clock operation need
 //extern bit bCheckRx1Buf;

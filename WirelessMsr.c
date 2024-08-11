@@ -44,7 +44,7 @@ extern BYTE g_bHighPrio;
 extern volatile BYTE mainTask;
 #endif DebugMode
 extern BYTE flgUart1Error;
-extern int BytesToSend;
+//extern int BytesToSend;
 extern int nTimeCnt;
 extern char ComBuf[MAX_RX1_BUF_LEN];
 
@@ -443,7 +443,8 @@ bool MeasureMain()
              if (/*(nCycles > 3) ||*/  (nBadAnswer > 10) ||(nNoDataCnt > 60))       // todo - check if need
              {
                 ResetEZR();     
-                nNoDataCnt = 0;
+                nNoDataCnt = 0;   
+                nBadAnswer = 0;
              }
             break;
         default:

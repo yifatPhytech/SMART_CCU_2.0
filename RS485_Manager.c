@@ -11,6 +11,7 @@
 #include "modem_manager.h"
 #include "interrupts.h"
 #include "HW_manager.h"
+#include "Pump_manager.h"
 
 
 #define CCU_HEADER 0x0F
@@ -33,7 +34,7 @@ extern eeprom _tagFlowDefEEPROM FlowDef[];
 extern bit g_LockUar1;
 extern BYTE bEndOfCbuTask;
 extern BYTE msrCurTask;
-extern int BytesToSend;
+//extern int BytesToSend;
 extern int nTimeCnt;
 extern char ComBuf[MAX_RX1_BUF_LEN];
 extern DateTime g_LastCnctTime;
@@ -50,7 +51,7 @@ char g_bCBUPumpState[2];
 void BuildPackage(ERS485Command cmd, int prm)
 {
     BYTE size = 1;  
-    unsigned int crc;//, sec = 100;
+    unsigned int crc, dur;//, sec = 100;
                   
     memset(ComBuf,0, 200);
     ComBuf[HEADER_INDEX] = CCU_HEADER;//0x0'I';    // Start Of Frame     
@@ -58,11 +59,15 @@ void BuildPackage(ERS485Command cmd, int prm)
     switch (cmd)
     {
     case CMD_PUMP1_MNG: //CMD_PUMP_MNG_OFF:
-    case CMD_PUMP2_MNG: //CMD_PUMP_MNG_OFF:
-        ComBuf[PAYLOAD_INDEX+1] = prm;  //CMD_CLOSE;   
-//        ComBuf[PAYLOAD_INDEX+2] = (unsigned char)((prm >> 8) & 0xFF);     //address high
-//        ComBuf[PAYLOAD_INDEX+3] = (unsigned char)(prm) ;                 //address low
-        size++;
+    case CMD_PUMP2_MNG: //CMD_PUMP_MNG_OFF:       
+        ComBuf[PAYLOAD_INDEX+1] = prm;  //CMD_CLOSE;        
+        if (cmd == CMD_PUMP1_MNG)
+            dur = pumpAsVlv[0].cmdData.iDuration;
+        else
+            dur = pumpAsVlv[1].cmdData.iDuration;
+        ComBuf[PAYLOAD_INDEX+2] = (unsigned char)((dur >> 8) & 0xFF);     //address high
+        ComBuf[PAYLOAD_INDEX+3] = (unsigned char)(dur) ;                 //address low
+        size += 3;
         break;  
     case CMD_LED:
         int2bytes(prm, &ComBuf[PAYLOAD_INDEX+1]);   
@@ -84,8 +89,7 @@ void BuildPackage(ERS485Command cmd, int prm)
         int2bytes(prm, &ComBuf[PAYLOAD_INDEX+5]);               
         CopyFlashToBuf(&ComBuf[PAYLOAD_INDEX+6],fSWUpdateAddress);
         size = 39;
-        break; 
-        
+        break;         
     }                            
     ComBuf[SIZE_INDEX] = size;
     crc = CRC16_CCITT(&ComBuf[PAYLOAD_INDEX], size, 0xFFFF);            
@@ -172,33 +176,6 @@ void DeInitCom()
     while (index2 < maxSize);
     return FALSE;
 } */
-/*
-int GetNumber(char* buf, BYTE maxSize)
-{
-    BYTE index1 = 0;
-    int nNum = 0;    
-    #ifdef DebugMode
-        SendDebugMsg("\r\nFIND number \0");      
-    #endif  DebugMode       
-   
-    while (((buf[index1] < '0') || (buf[index1] > '9')) && (index1 < maxSize))
-        index1++;
-       
-    if (index1 == maxSize) 
-        return -1;
-    nNum = buf[index1] - 0x30;    
-    index1++;        
-    while (((buf[index1] >= '0') && (buf[index1] <= '9')) && (index1 < maxSize))
-    {        
-        nNum *= 10;
-        nNum += buf[index1++] - 0x30; 
-    }  
-     #ifdef DebugMode
-        SendDebugMsg("\r\nnumber is: \0");
-        PrintNum(nNum);      
-    #endif  DebugMode              
-    return nNum;
-}  */
 
 BYTE ValidateCBUHeader()
 {
@@ -234,31 +211,22 @@ BYTE ValidateCBUHeader()
         return ERROR;                  
     }    
 
-//    if (crc == crc1)
-//        g_nCbuVer = kaufmanCBU;
-//    if (crc == crc2)
-//        g_nCbuVer = ItayCBU;
- 
     return TRUE;
 }
 
 BYTE ParseCbuRequest()
 {
-    BYTE  /*index = PAYLOAD_INDEX+1,*/ payloadSize = 0;//, cmd;  
+    BYTE  payloadSize = 0;//, cmd;  
     unsigned int crc;
-
-    if (ValidateCBUHeader() != TRUE)
-        return ERROR;        
-        
+      
     memset(ComBuf,0, 200);
     ComBuf[HEADER_INDEX] = CCU_HEADER;    
-    ComBuf[PAYLOAD_INDEX] = RxUart1Buf[PAYLOAD_INDEX]-0x20;  //?               
+    ComBuf[PAYLOAD_INDEX] = RxUart1Buf[PAYLOAD_INDEX];  //?               
 
     switch (RxUart1Buf[PAYLOAD_INDEX])
     {       
-        case 97:    //CMD_ALERT: //'a':   
+        case CMD_ALERT:    
             SaveAlertData(&RxUart1Buf[PAYLOAD_INDEX+1]);  
-            ComBuf[PAYLOAD_INDEX] = CMD_ALERT;     
             ComBuf[PAYLOAD_INDEX+1] = 1;
             payloadSize = 2;
         break;
@@ -346,7 +314,16 @@ BYTE ParseCbuRequest()
     crc = CRC16_CCITT(&ComBuf[PAYLOAD_INDEX], payloadSize, 0xFFFF);            
     int2bytes(crc, &ComBuf[CRC_INDEX]);        
     ComBuf[4+payloadSize] = '\n'; 
-    BytesToSend = payloadSize + PERMANENT_BYTE_CNT;
+    BytesToSend = payloadSize + PERMANENT_BYTE_CNT;  
+    SetUART1BaudRate(RATE9600); //(RATE19200);     
+    prevUART1Stat = (PORTD  & 0x30);    //>> 4) & 0x03);
+    UART1Select(UART_RS485);        
+    RS485_CTRL_TX();
+    delay_ms(1);     
+    TransmitBuf(1);  
+    delay_ms(1);             
+    RS485_CTRL_RX();  
+    DeInitCom();     
     return TRUE;
 }
 
@@ -358,15 +335,12 @@ BYTE ParseCbuResponse(ERS485Command cmd)
     if (ValidateCBUHeader() != TRUE)
         return ERROR;
    
-    if (/*CMD_CODE[*/cmd != (RxUart1Buf[PAYLOAD_INDEX]))  // A --> a ?
+    if ((cmd != RxUart1Buf[PAYLOAD_INDEX]) && (cmd != CMD_GET_MSG))
     {       
- //       if ((CMD_CODE[cmd] != (RxUart1Buf[PAYLOAD_INDEX] - 0x20))  && (CMD_CODE[cmd] != (RxUart1Buf[PAYLOAD_INDEX] + 0x20)))
-        {
-            #ifdef DebugMode
-            SendDebugMsg("\r\nWrong Response Command\0");     
-            #endif DebugMode                       
-            return ERROR;      
-        }
+        #ifdef DebugMode
+        SendDebugMsg("\r\nWrong Response Command\0");     
+        #endif DebugMode                       
+        return ERROR;      
     }
         
     switch (cmd)
@@ -374,8 +348,6 @@ BYTE ParseCbuResponse(ERS485Command cmd)
     case CMD_RST_CBU:
         res = 1;    
     break; 
-//    case CMD_PUMP_MNG_ON:    
-//    case CMD_PUMP_MNG_OFF:
     case CMD_PUMP1_MNG:
     case CMD_PUMP2_MNG:
     case CMD_SET_CBU_DEF:
@@ -407,7 +379,10 @@ BYTE ParseCbuResponse(ERS485Command cmd)
         SaveCBUPortData(&RxUart1Buf[PAYLOAD_INDEX+1]);        
         memcpy(&g_bCBUPumpState, &RxUart1Buf[PAYLOAD_INDEX+PUMP_STATE_INDEX], 2); 
         res = 1; 
-        break;   
+        break;  
+    case  CMD_GET_MSG:     
+        res = ParseCbuRequest();
+        break;
         default:                                                                   
     }     
         
@@ -465,7 +440,7 @@ char SendRecRS485(ERS485Command cmd, int prm)
      return res;
 }
 
-void RecSendRS485()
+/*void RecSendRS485()
 {
     #ifdef DebugMode
     BYTE RES = 0;
@@ -524,7 +499,7 @@ void RecSendRS485()
     SendDebugMsg("\r\ncurrent mainTask = ");       
     PrintNum(mainTask);    
     #endif DebugMode   
-}
+}*/
 
  /*
 void GetNextCBUTask()
