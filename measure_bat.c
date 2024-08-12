@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "define.h"
 
+#define MUX_BATTERY 1
+
 extern int iVoltage;
 
 //Do battery measuring

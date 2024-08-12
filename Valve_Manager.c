@@ -20,26 +20,15 @@
 #define MAX_SEND_EZR_RETRY  2
 unsigned short DAYS_PER_MONTH[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-//#define MIN_DELAY_PUMP  (signed char)(-120)
-//#define MAX_DELAY_PUMP  (signed char)120
-
-// command type
-//#define CMD_NONE        0   
-//#define CMD_START_IRG   1       
-//#define CMD_STOP_IRG    2
-//#define CMD_GET_STATUS  4
-
 //cmd status
 #define STATUS_IDLE        0   
 #define STATUS_CMD_IN      1   
 #define STATUS_SENT_EZR    2   
-//#define STATUS_CONFIRMED   3
 
 //valve status
 #define STATUS_VCU_OFF          0
 #define STATUS_VCU_ON           1
 #define STATUS_WAIT_2_START     2   
-//#define STATUS_WAIT_2_START_ON  3   
 
 // valve extended parameters
 #define EXT_START_NOW   1
@@ -48,18 +37,8 @@ unsigned short DAYS_PER_MONTH[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 3
 #define EXT_TST        8
 
 ValveUnit vlvCmdArr[MAX_CMD];// = {{735980, {19, 11, 10, 20, 0}, 20, CMD_STS_DATA},{736380, {19, 11, 10, 20, 0}, 20, CMD_STS_DATA}} ;
-//ValveUnit pumpAsVlv;
-BYTE     g_bHighPrio;
 BYTE g_bVlvListUpdated = false;
-//DateTime g_PumpCloseTime;
 unsigned int g_lGlobalCmd = 0;
-//BYTE g_cmdSndCnt;
-
-extern BYTE bMonitorConnected;
-extern volatile BYTE mainTask;
-extern BYTE g_bAfterModem;
-extern int iVoltage;
-extern eeprom _tagAPPEEPROM AppEepromData;
 
 flash char *cmd_status_strings[] = {"STATUS_IDLE", "STATUS_CMD_IN", "STATUS_SENT_EZR","STATUS_WAIT_2_STOP"};
 flash char *vlv_status_strings[] = {"STATUS_VCU_OFF", "STATUS_VCU_ON", "STATUS_WAIT_2_START"};

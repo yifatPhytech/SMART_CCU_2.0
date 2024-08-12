@@ -45,7 +45,7 @@ typedef struct _ValveUnit
 //extern BYTE     g_bMainPumpOpen ;
 //extern unsigned int gOpenPumpDelay;
 //extern unsigned int gClosePumpDelay;
-extern BYTE     g_bHighPrio;
+//extern BYTE     g_bHighPrio;
 //extern BYTE     g_cmdSndCnt;
 //extern DateTime g_PumpCloseTime;
 extern BYTE     g_bVlvListUpdated;

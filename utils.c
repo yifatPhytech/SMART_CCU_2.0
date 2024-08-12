@@ -1,5 +1,7 @@
 #include "utils.h"
 
+eeprom _tagAPPEEPROM AppEepromData;
+
 int_bytes union_b2i;
 Ulong_bytes lb;
 float_bytes fb;

@@ -1,6 +1,8 @@
 #include "define.h"
 
+//extern eeprom _tagAPPEEPROM AppEepromData;
 extern eeprom _tagAPPEEPROM AppEepromData;
+
 
 typedef union {
     int ival;

@@ -2,6 +2,7 @@
 #define MODEM_MANAGER_C
 //#include "define.h"
 #include "utils.h"
+#include "modem_str.h"
 #include "protocol.h"
 #include "Valve_Manager.h"
 #include "cbrd1000v0.h"
@@ -12,12 +13,19 @@
 #include "HW_manager.h"
 #include "Pump_manager.h"
 #include "RS485_Manager.h"
+#include "Monitor_manager.h"
 
 #define ISRAEL_QUICK_CONNECT
 //#define SMART_SERVER
+#define TEST_DURATION       15
 
-#define RAN_3G  1
-#define RAN_4G  2
+//#define RAN_3G  1
+//#define RAN_4G  2
+
+#define SERVER_DATA        1
+#define SERVER_BOOTLOADER    2
+
+#define MODEM_STATUS_PIN    6
 
 #define CMD_LEN 13
 
@@ -27,14 +35,13 @@
 #define TASK_MODEM_CONNECT      3
 #define TASK_MODEM_POST         4
 #define TASK_MODEM_CLOSE        5
-#define SUB_TASK_INIT_MODEM_OK  12
 
+#define SUB_TASK_INIT_MODEM_OK  12
 #define SUB_TASK_INIT_MODEM_REG     13
 #define SUB_TASK_INIT_MODEM_RSSI    14
 #define SUB_TASK_INIT_MODEM_COPS    15
 #define SUB_TASK_MODEM_CHK_ICCID    16
 #define SUB_TASK_INIT_MODEM_GET_COPS    18
-#define SUB_TASK_INIT_MODEM_DELAY   19
 #define SUB_TASK_INIT_MODEM_MONITOR 20
 
 #define SUB_TASK_INIT_MODEM_COPS_MAN    24
@@ -46,15 +53,11 @@
 #define SUB_TASK_INIT_MODEM_COPS_4_MONITOR  22  
 
 #define SUB_TASK_MODEM_CONNECT_ATCH     31
-//#define SUB_TASK_MODEM_CONNECT_SETUP1   32
-//#define SUB_TASK_MODEM_CONNECT_SETUP2   33
-//#define SUB_TASK_MODEM_CONNECT_SETUP3   34
 #define SUB_TASK_MODEM_CONNECT_IS_ACTIVE    34
 #define SUB_TASK_MODEM_CONNECT_PDP_DEF      35
 #define SUB_TASK_MODEM_CONNECT_ACTV         36
 #define SUB_TASK_MODEM_CONNECT_START_DIAL   37
 #define SUB_TASK_MODEM_CONNECT_DEACTV       38
-#define SUB_TASK_MODEM_CONNECT_DELAY        39
 
 #define SUB_TASK_MODEM_POST_PRM     41
 #define SUB_TASK_MODEM_POST_CNFRM   44
@@ -74,7 +77,6 @@
 #define SUB_TASK_MODEM_IGN_ON       55
 #define SUB_TASK_MODEM_IGN_OFF      56
 #define SUB_TASK_MODEM_EXIT         57
-//#define SUB_TASK_MODEM_CGMM         58
 
 #define DO_DATA     0x40
 #define DO_PARAMS   0x20
@@ -89,8 +91,6 @@
 #define UPDATE_DL_INTERVAL  9
 #define UPDATE_COMMAND  10
 #define UPDATE_GMT      11
-//#define UPDATE_LIMITS   12
-//#define UPDATE_ARMED_LIMITS  13
 #define UPDATE_USE_CC   14
 #define UPDATE_ROAMING_DLY  15
 #define UPDATE_MNC      16
@@ -104,7 +104,6 @@
 #define UPDATE_VLV_LST          25
 #define UPDATE_CBU_CNFG         26
 #define UPDATE_CBU_CNFG2        27
-//#define UPDATE_COOLING_CMD      28
 #define MAX_PRM_TASKS           28
 
 #define GET_UPDATE      1
@@ -132,69 +131,38 @@ typedef struct
     unsigned short versionUpdate;
 } _tagBLEEPROM;
 
-bit bWaitForModemAnswer;
-bit longAnswerExpected;
-bit bEndOfModemTask;
-bit bNeedToWait4Answer;
-extern bit bEndOfMonitorTask;
-BYTE bConnectOK;
-BYTE findOK;
-BYTE nFw2Upg;
-extern BYTE btrStatus;
-BYTE g_bModemConnect = 0;
-extern bit overFlow = 0;
-BYTE modemCurTask;
-BYTE modemCurSubTask;
-static BYTE post2send;
-BYTE g_RAN;
-BYTE g_bSendCBUMeta = FALSE;
-BYTE g_bSendList = FALSE;
-BYTE nErrorOnConnect;
-//BYTE waitingTask;
-//BYTE dataSentOK;
-BYTE prmSentOK;
-BYTE vlvSentOK = FALSE;
-BYTE bSendPrms;
-//extern int BytesToSend;
-BYTE ModemResponse;
-//extern unsigned int objToMsr;
-extern bit bReset;
-extern unsigned int rx0_buff_len;
-BYTE rssi_val;
-BYTE UpdatePrmArr[MAX_PRM_TASKS];
-extern DateTime g_LastCnctTime;
-extern char DataBlock[];
-extern char clockBuf[7]; 		 //buffer for all clock operation need
-extern char ComBuf[MAX_RX1_BUF_LEN];
-int nMaxWaitingTime;
-extern int iVoltage;
 extern int nTimeCnt;
-extern volatile BYTE prevMainTask;
-extern volatile BYTE g_bExtIntDtct;
-#ifdef UseGPS
-extern float g_fLat;
-extern float g_fLon;
-#endif UseGPS
-BYTE fSwUpdate;
-unsigned long OprtTbl[10] ;
-BYTE AccessTech[10] ;
 eeprom _tagBLEEPROM BlEepromData @0x0400;
 eeprom _tagBLEEPROM BlEepromData = {0};
 eeprom _tagPortDefEEPROM ComponentArray[MAX_PORTS_CBU] @0x300;
 eeprom _tagFlowDefEEPROM FlowDef[2] @0x200;
-extern volatile BYTE mainTask;
-extern BYTE g_nTime2StartAT;
 
-#ifdef SMART_SERVER  
-char tmpBuf[45];
-#endif SMART_SERVER  
+//bit bWaitForModemAnswer;
+bit longAnswerExpected;
+bit bEndOfModemTask;
+bit bNeedToWait4Answer;
+bit overFlow = 0;
+bit bReset;
 bit bUpdateAddress;
-char newURL[32];          
-char newPORT[4];
-char cEndMark = '\0';
-BYTE nMaxFailuresNum;
-BYTE prmUpdtIndex;
-int  bufIndexToUpd;
+//extern bit bEndOfMonitorTask;
+BYTE bConnectOK;
+BYTE findOK;
+BYTE nFw2Upg;
+BYTE g_bModemConnect = 0;
+BYTE modemCurTask;
+BYTE modemCurSubTask;
+static BYTE post2send;
+BYTE g_bSendCBUMeta = FALSE;
+BYTE g_bSendList = FALSE;
+BYTE nErrorOnConnect;
+BYTE prmSentOK;
+BYTE vlvSentOK = FALSE;
+BYTE bSendPrms;
+BYTE ModemResponse;
+BYTE rssi_val;
+BYTE fSwUpdate;
+BYTE UpdatePrmArr[MAX_PRM_TASKS];
+BYTE AccessTech[10] ;
 BYTE failCnt;
 BYTE initCnt;
 BYTE bPostAnswered;
@@ -203,22 +171,48 @@ BYTE bTestPump;
 BYTE nValveCmdCnt;
 BYTE bIsMoreVlvCmd;
 BYTE fGetCopsLst;
+BYTE numOprt = 0;
+BYTE curOprtIndex;
+BYTE nMaxFailuresNum;
+BYTE prmUpdtIndex;
+BYTE taskAfterDelay;
+BYTE nRegDenied = 0;
+BYTE fMdmAns;
+int  bufIndexToUpd;
+int nMaxWaitingTime;
+static Ulong_bytes newId;
+unsigned int nEzrFw2Upg;
+unsigned int nCBUFw2Upg;
+char newURL[32];          
+char newPORT[4];
+unsigned long OprtTbl[10] ;
+//BYTE waitingTask;
+//BYTE dataSentOK;
+//BYTE g_RAN;
+//extern int BytesToSend;
+//extern unsigned int objToMsr;
+//extern unsigned int rx0_buff_len;
+//extern DateTime g_LastCnctTime;
+//extern char DataBlock[];
+//extern char clockBuf[7]; 		 //buffer for all clock operation need
+//extern char ComBuf[MAX_RX1_BUF_LEN];
+//extern int iVoltage;
+//extern volatile BYTE prevMainTask;
+//extern volatile BYTE g_bExtIntDtct;
+#ifdef UseGPS
+extern float g_fLat;
+extern float g_fLon;
+#endif UseGPS
+#ifdef SMART_SERVER  
+char tmpBuf[45];
+#endif SMART_SERVER  
+char cEndMark = '\0';
+
 BYTE PrmLen[MAX_PRM_TASKS] = {1,32,4,32,6,32,32,1,1,1,1,0,8,8,1,1,4,4,4,1,2,2,0,1,0,200,150};    //task 11 not exist. skip the number
 unsigned char ICCID[] = "********************";
 unsigned char CellID[] = "*****";
-BYTE taskAfterDelay;
 char prevID[4];
-BYTE numOprt = 0;
-BYTE curOprtIndex;
-extern unsigned int nEzrFw2Upg;
-extern unsigned int nCBUFw2Upg;
 
-//BYTE nConnectError = 0;
-BYTE nRegDenied = 0;
-BYTE fMdmAns;
-//BYTE fModemModel;
-static Ulong_bytes newId;
-flash unsigned char PHYTECH_FILE_END_MARK[] = "phy111\r\n#";  //8  MUST BE AT LEAST 6 CHARS!!!!!!!!!
 // update here rom version
 //flash unsigned char MONTH_T = 7;
 flash unsigned char YEAR_T = 24;
@@ -231,7 +225,6 @@ flash unsigned char YEAR = YEAR_T;
 #endif
 flash unsigned char RomVersion[4] = {'U',8, YEAR, 21};   //__BUILD__
 
-extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
 //extern flash unsigned char fEZRUpdateAddress[];// = "phytech.dev.valigar.co.il@";
@@ -242,96 +235,6 @@ const BYTE BAUD_RATE_LOW[]  = {0x01, 0x03, 0x05, 0x0B, 0x17, 0x2F, 0xBF/*, 0x5F,
 const long BAUD_RATE_LONG[] = {115200, 57600, 38400 , 19200 , 9600, 4800, 1200/*, 2400, 14400*/};
 #endif DebugMode
 
-
-flash unsigned char  AT_DELL_ECHO[] = "ATE0\r\n\0";
-flash unsigned char  AT_SAVE[] = "AT&W\r\n\0"; 
-flash unsigned char  AT_SET_BAUDRATE[] = "AT+IPR=9600;&W\r\n\0";   //"AT+IPR=19200;&W\r\n\0";
-flash unsigned char  AT_IsModemOK[] = "AT\r\n\0";             //5 bytes
-flash unsigned char  AT_IsModemReg[] = "AT+CREG?\r\n\0";     //10 bytes
-flash unsigned char  AT_REG_UMTS_STATUS[] = "AT+CGREG?\r\n\0";
-flash unsigned char  AT_REG_LTE_STATUS[] = "AT+CEREG?\r\n\0";
-flash unsigned char  AT_COPS_AUTO_0[] = "AT+COPS=0\r\n\0";      //11 bytes
-flash unsigned char  AT_COPS_LST[] = "AT+COPS=?\r\n\0";
-flash unsigned char  AT_COPS_MAN[] = "AT+COPS=1,2,@";       //12 bytes. must have # at the end
-flash unsigned char  AT_COPS_MAN_MONITOR[] = "AT+COPS=1,2,\"42503\"\r\n\0";       //only for monitor connecting
-flash unsigned char  AT_COPS_ASK[] = "AT+COPS?\r\n\0";
-flash unsigned char  AT_CELL_MONITOR[] = "AT+QNWINFO\r\n\0";   //"AT#MONI\r\n\0";
-flash unsigned char  AT_CSQ[] = "AT+CSQ\r\n\0";               //8 bytes  AT+GMR-returns the software revision identification
-flash unsigned char  AT_EOD[] = "+++\0";               //8 bytes  AT+GMR-returns the software revision identification
-flash unsigned char  AT_QSS[] = "AT+QSIMSTAT?\r\n\0"; //"AT#QSS?\r\n\0";   
-flash unsigned char AT_CCID[] = "AT+QCCID\r\n\0";       //"AT#CCID\r\n\0";
-flash unsigned char AT_PWROFF[] = "AT+QPOWD\r\n\0";
-//GPRS connecting commands:
-flash unsigned char GPRS_ATTACH[] = "AT+CGATT=1\r\n\0";                               //12
-flash unsigned char DEF_PDP_CNTXT[] = "AT+CGDCONT=1,\"IP\",@";    //39
-flash unsigned char DEF_PDP_CNTXT_VZN[] = "AT+CGDCONT=1,\"IPV4V6\",@";    //39
-//flash unsigned char DEF_PDP_CNTXT_LTE[] = "AT+CGDCONT=3,\"IP\",@";    //39
-//flash unsigned char DEF_QULT_MIN_PROF[] = "AT+CGQMIN=1,0,0,0,0,0\r\n\0";                     //24
-//flash unsigned char DEF_QULT_REQ_PROF[] = "AT+CGQREQ=1,0,0,0,0,0\r\n\0";                     //24
-//flash unsigned char DEF_SCKT_CNFG[] = "AT#SCFG=1,1,1500,90,450,3\r\n\0";                      //24
-//flash unsigned char DEF_SCKT_CNFG_LTE[] = "AT#SCFG=3,3,1500,90,450,3\r\n\0";                      //24  AT#SCFG=3,3,1500,90,600,50
-flash unsigned char ACTIVATE_CNTXT[] = "AT+CGACT=1,1\r\n\0";    //"AT#SGACT=1,1\r\n\0";                                //14
-flash unsigned char DEACTIVATE_CNTXT[] = "AT+CGACT=0,1\r\n\0";  //"AT#SGACT=1,0\r\n\0";                                //14
-flash unsigned char ISACTIVATE_CNTXT[] = "AT+CGACT?\r\n\0";
-flash unsigned char AT_TCP_OPN[] = "AT+QIOPEN=1,0,\"TCP\",@";           //"AT#SD=1,0,1020,\"phytech1.dyndns.org\"\r\n";   //40
-//flash unsigned char AT_TCP_OPN_LTE[] = "AT#SD=3,0,@";           //"AT#SD=1,0,1020,\"phytech1.dyndns.org\"\r\n";   //40
-flash unsigned char AT_TCP_CLS[] = "AT+QICLOSE=0\r\n\0";    //"AT#SH=1\r\n\0";                               //9
-//flash unsigned char MODEM_CLS[] = "AT+QPOWD\r\n\0";  //"AT#SHDN\r\n\0";
-// post commands
-//flash unsigned char AT_POST_TITLE_PRM[] = "POST /api/sensor/loggerparamsezr HTTP/1.1\r\n#";  //                 api/file/sensorparams
-flash unsigned char AT_POST_TITLE_PRM[] = "POST /api/sensor/loggerparamscs HTTP/1.1\r\n#";  // 
-//flash unsigned char AT_POST_TITLE_PRM1[] = "POST /api/Get HTTP/1.1\r\n#";  //"GET /api/Get HTTP/1.1\r\n#";
-//flash unsigned char AT_POST_TITLE_PRM1[] = "POST phytechtest.azurewebsites.net:443 /api/Get HTTP/1.1\r\n#";  //"GET /api/Get HTTP/1.1\r\n#";
-//flash unsigned char AT_POST_TITLE_PRM12[] = "Host: phytechtest.azurewebsites.net:443\r\n#";
-//flash unsigned char AT_POST_TITLE_VLV_V1[] = "POST /api/sensor/SensorValvUpdate HTTP/1.1\r\n#";  //                 
-//flash unsigned char AT_POST_TITLE_VLV[] = "POST /api/sensor/getValvTaskV2 HTTP/1.1\r\n#";  //    
-flash unsigned char AT_POST_TITLE_VLV[] = "POST /api/sensor/getCoolingTask HTTP/1.1\r\n#";  //    
-//flash unsigned char AT_POST_TITLE_VLV[] = "POST /api/sensor/getBulkCoolingTask HTTP/1.1\r\n#";  //       
-#ifdef SMART_SERVER 
-flash unsigned char AT_POST_TITLE_CBU_DATA[] = "POST /data HTTP/1.1\r\n#";  //
-#else
-flash unsigned char AT_POST_TITLE_CBU_DATA[] = "POST /api/sensor/cbudatav3 HTTP/1.1\r\n#";  //
-#endif   
-flash unsigned char AT_POST_TITLE_ALERT[] = "POST /api/sensor/cbualerts HTTP/1.1\r\n#";  //   
-flash unsigned char AT_POST_TITLE_VCU_LST[] = "POST /api/sensor/ccumetadata HTTP/1.1\r\n#";  //  
-//flash unsigned char AT_POST_TITLE_DATA_SHORT[] = "POST /api/sensor/loggerngshortex HTTP/1.1\r\n#";       
-flash unsigned char AT_POST_TITLE_CBU_META_DATA[] = "POST /api/sensor/cbumetadatav3 HTTP/1.1\r\n#";  //   
-//flash unsigned char AT_POST_TITLE_CBU_META_DATA_OLD[] = "POST /api/sensor/cbumetadata HTTP/1.1\r\n#";  //   
-
-//flash unsigned char AT_POST_TYPE1[] = "Content-Type: text/html; charset=utf-8\r\n#";   //52
-              
-flash unsigned char AT_POST_TITLE_VCU_DATA[] = "POST /api/sensor/vcudata HTTP/1.1\r\n#";              // ValvSensorData
-//flash unsigned char AT_POST_TITLE_PUMP_DATA[] = "POST /api/sensor/ValvSensorData HTTP/1.1\r\n#";
-flash unsigned char AT_POST_TITLE_GETPRM[] = "POST /api/sensor/sensorupdate HTTP/1.1\r\n#";  //  41          api/file/postparamupdate
-flash unsigned char AT_POST_TITLE_CNFRMPRM[] = "POST /api/sensor/sensorupdateconfirmation HTTP/1.1\r\n#";  //api/file/postparamupdateconfirmation
-flash unsigned char AT_POST_TITLE_CNFRMVLV[] = "POST /api/sensor/sensorvlvcmdconfirmation HTTP/1.1\r\n#";  //api/file/postparamupdateconfirmation
-
-flash unsigned char AT_GET_SW_STATUS_3[] = "GET http://@";  
-flash unsigned char AT_GET_SW_STATUS_4[] = "/status/@";  //  
-flash unsigned char AT_GET_SW_STATUS_5[] = "/rfstatus/@";  //  
-flash unsigned char AT_GET_SW_STATUS_2[] = " HTTP/1.1\r\n@"; 
-flash unsigned char AT_POST_CONN[] = "Connection: keep-alive\r\n#";                     //24
-flash unsigned char AT_POST_TYPE[] = "Content-Type: multipart/form-data; boundary=#";   //52
-flash unsigned char AT_POST_HOST[] = "Host: @";         //Host: phytech1.dyndns.org:1011\r\n#";             //32
-flash unsigned char AT_POST_LENGTH1[] = "Content-Length: 257\r\n\r\n#";                     //BuildExtParamBuff  253
-//flash unsigned char AT_POST_LENGTH2[] = "Content-Length: 11\r\n\r\n#";                     //BuildExtParamBuff  253
-flash unsigned char AT_POST_LENGTH4[] = "Content-Length: @";                     //23
-//flash unsigned char AT_POST_LENGTH3[] = "Content-Length: 130\r\n\r\n#";                     //23
-//flash unsigned char AT_POST_LENGTH6[] = "Content-Length: 123\r\n\r\n#";                     //23
-flash unsigned char AT_POST_FILE_HDR1[] = "Content-Disposition: form-data; name=\"file\"; #";             //45
-flash unsigned char AT_POST_FILE_HDR_PRM[] = "filename=\"PARAMS.txt\"\r\n#";    //23
-flash unsigned char AT_POST_FILE_HDR_DATA[] = "filename=\"VLVDATA.txt\"\r\n#";    //21
-flash unsigned char AT_POST_FILE_HDR_UPDTPRM[] = "filename=\"UPDTPRM.txt\"\r\n#";    //29
-//flash unsigned char AT_POST_FILE_HDR_GETDATA[] = "filename=\"GETPARAMPOST.txt\"\r\n#";    //29
-flash unsigned char AT_POST_FILE_HDR_VALVE[] = "filename=\"VALVCMD.txt\"\r\n#";    //24
-flash unsigned char AT_POST_FILE_HDR_ALERT[] = "filename=\"ALERTSS.txt\"\r\n#";    //24
-flash unsigned char AT_POST_FILE_HDR_PUMP[] = "filename=\"PUMPACT.txt\"\r\n#";    //24
-flash unsigned char AT_POST_FILE_HDR_CBU_DATA[] = "filename=\"CBUDATA.txt\"\r\n#";    //24
-flash unsigned char AT_POST_FILE_HDR_CBU_META[] = "filename=\"CBUMETA.txt\"\r\n#";    //24
-flash unsigned char AT_POST_FILE_HDR_VCU_LIST[] = "filename=\"VCULIST.txt\"\r\n#";    //24
-flash unsigned char AT_POST_FILE_HDR2[] = "Content-Type: text/plain\r\n\r\n#";          //28
-//flash unsigned char BACKUP_URL[] = "54.246.50.57#0000000000000000000"; //"63.34.115.252#000000000000000000";//"proxy.backup.phytech.com#0000000";
-//flash unsigned char BACKUP_URL_LTE[] = "54.246.50.57#0000000000000000000";  // "63.34.115.252#000000000000000000";//"54.246.85.255#000000000000000000";;
 
 BYTE SendRecATCmd(flash unsigned char *bufToSend, BYTE tOut);
 
@@ -358,7 +261,7 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
     #endif DebugMode   
 
     mainTask = TASK_MODEM;   
-    g_RAN = RAN_3G;
+//    g_RAN = RAN_3G;
     bSendPrms = 0;    
     nErrorOnConnect = 0;   
     if ((bExtReset == TRUE) || (btrStatus == BTR_STATUS_EMPTY) || 
@@ -402,7 +305,7 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
     prmSentOK = FALSE;      
     vlvSentOK = FALSE;     
         
-    g_bHighPrio = FALSE;     
+//    g_bHighPrio = FALSE;     
     post2send = POST_NONE;    
     fSwUpdate = 0;    
     ENABLE_UART0();
@@ -410,7 +313,7 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
     ENABLE_UART1(); 
     UART1Select(UART_DBG); 
     #endif  LiteDebug   
-    g_nTime2StartAT = 130;  
+//    g_nTime2StartAT = 130;  
     nCBUFw2Upg = 0;     
     nEzrFw2Upg = 0;
 }
@@ -1213,7 +1116,7 @@ BYTE IsVerizon()
 {
     if (strstr(RxUart0Buf, "Verizon"))        
     {                  
-        g_RAN = RAN_4G;
+//        g_RAN = RAN_4G;
         return TRUE;                        
     }
     return FALSE;
@@ -2706,7 +2609,7 @@ BYTE GetNextTask()
                             bConnectOK = TRUE;
                             // save last connecting time 
                             GetRealTime();
-                            g_LastCnctTime = g_curTime;  
+//                            g_LastCnctTime = g_curTime;  
                             nErrorOnConnect = 0; 
                             // if its connecting without logger ID (monitor) - shutdown now 
                             if (IsZeroID(AppEepromData.eLoggerID))

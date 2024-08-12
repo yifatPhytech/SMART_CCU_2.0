@@ -17,6 +17,9 @@ typedef struct
     BYTE            pVCUDataOverlap;
     BYTE            pCmpsDataOverlap;
 } _ExtEpromPointers;
+
+extern char DataBlock[];
+
 /////////////////////////////////////////////
 // Data_manager functions
 ////////////////////////////////////////////

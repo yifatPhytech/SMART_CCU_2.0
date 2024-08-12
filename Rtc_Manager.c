@@ -4,12 +4,13 @@
 #include "define.h"
 #include "Rtc_Manager.h"
 #include "i2c_bus.h"
+#include "eeprom.h"
 
 //declare local & global variables
 char clockBuf[7];          //buffer for all clock operation need
 char cmdByte;             //buffer for the command byte
 char readClockBuf[7];             //buffer for data reading from clock
-extern char e2_writeFlag;
+//extern char e2_writeFlag;
 DateTime g_curTime;
 
 void RtcConfig(char cmd, char prm)

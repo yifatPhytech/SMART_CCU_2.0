@@ -18,14 +18,11 @@
 #define PUMP_ACTION_MEMORY_END    (ALERTS_MEMORY_START - PUMP_ACTION_PACKET_SIZE) 
 #define ALERTS_MEMORY_END         65500
 
-extern eeprom _tagAPPEEPROM AppEepromData;
-//extern DateTime g_curTime;
-//extern BYTE g_bHighPrio;
 static _ExtEpromPointers  eprmPonter;
 static unsigned int pOriginalReadBlock;
-extern char e2_writeFlag;
-extern char DataBlock[];
-extern volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];   //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
+//extern char e2_writeFlag;
+char DataBlock[];
+//extern volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];   //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
 //extern unsigned int objToMsr;
 
 BYTE IsAddressOnPageLimit(unsigned int iAddress, int iSize)
@@ -35,34 +32,6 @@ BYTE IsAddressOnPageLimit(unsigned int iAddress, int iSize)
         return FALSE;
     return TRUE; 
 }
-
-/*//write 2 bytes data into ext_e2
-unsigned int WriteIntoExte2(int intData, unsigned int intAddress, char sensorMeasur)
-{
-	char helpBuf[2];
-                        
-    if(sensorMeasur) //if it is sensor measur data to be writen into e2
-        //move pWrite to next write position
-        intAddress += 2;          
-        
-    //set data into 2 bytes
-    int2bytes(intData, helpBuf);
-      
-    if (IsAddressOnPageLimit(intAddress, 2))  
-    {                            
-                //write data onto ext_e2
-        if(!(e2_writePage(intAddress, 1, &helpBuf[0])))
-            return 1;//if writing into ext_e2 faild exit faild
-        if(!(e2_writePage(intAddress+1, 1, &helpBuf[1])))
-            return 1;//if writing into ext_e2 faild exit faild
-    }
-    else
-        //write data onto ext_e2
-        if(!(e2_writePage(intAddress, 2, helpBuf)))
-            return 1;//if writing into ext_e2 faild exit faild
-	//else
-	return intAddress;
-}  */
 
 //write 2 bytes data into ext_e2
 BYTE WriteBufIntoExte2(char * data, unsigned int intAddress, int length)
@@ -326,7 +295,7 @@ char SaveVcuData(char* data, BYTE len, BYTE situation)
         eprmPonter.pVCUDataWrite = VCU_MEMORY_START;        
         eprmPonter.pVCUDataOverlap = 1;
     }
-    g_bHighPrio = TRUE;
+//    g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();  
 }
 
@@ -432,7 +401,7 @@ char SavePumpActionData(int action, char res, unsigned int cmdIdx, BYTE pmpIdx)
     if (eprmPonter.pPmpActionWrite > PUMP_ACTION_MEMORY_END)
         eprmPonter.pPmpActionWrite = PUMP_ACTION_MEMORY_START; 
     
-    g_bHighPrio = TRUE;
+//    g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();
 }
 
@@ -463,7 +432,7 @@ char SaveCBUPortData(char * data)
 //    SendDebugMsg("\r\npCmpsDataWrite \0");
 //    PrintNum(eprmPonter.pCmpsDataWrite);
 //    #endif DebugMode 
-    g_bHighPrio = TRUE;
+//    g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();
 }
 
@@ -491,31 +460,9 @@ char SaveAlertData(char * alert)
     eprmPonter.pAlertWrite += ALERTS_MEMORY_PACKET_SIZE;    
     if (eprmPonter.pAlertWrite > ALERTS_MEMORY_END)
         eprmPonter.pAlertWrite = ALERTS_MEMORY_START;
-    g_bHighPrio = TRUE;
+//    g_bHighPrio = TRUE;
     return TRUE;    //SavePointers();
 }
-
-/*BYTE ReadVCUPacket()
-{
-//    BYTE i;
-    if (eprmPonter.pVCUDataWrite == eprmPonter.pVCUDataRead)
-        return NO_DATA;
-	if(CopyBlockIntoRam() == FALSE) //copy data block at the pBread address
-    {
-		return FALSE;
-    }
-    // if the block is the last one to send - keep the inside address  
-    if (eprmPonter.pVCUDataWrite == eprmPonter.pVCUDataRead)
-        eprmPonter.pVCUDataWrite = eprmPonter.pVCUDataRead = VCU_MEMORY_START;    
-
-	//save control parameters into ext_e2
-	if (SavePointers() == FALSE)
-    {
-		return FALSE;
-    }
-
-	return TRUE;
-}   */
 
 char ResetReadPointer(BYTE nPacketType)
 {

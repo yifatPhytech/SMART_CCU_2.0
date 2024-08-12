@@ -13,34 +13,23 @@
 #include "interrupts.h"
 #include "Ezr_com_manager.h"
 #include "Pump_manager.h"
+#include "Monitor_manager.h"
 
 
-extern eeprom _tagPortDefEEPROM ComponentArray[];
-extern flash unsigned char RomVersion[]; 
-extern PUMP_CMD g_PumpCmdNow;
-//extern CBU_COMPONENTS g_curPort;
-extern volatile BYTE prevMainTask;
-extern volatile BYTE g_bExtIntDtct;
-extern volatile BYTE mainTask;
-extern bit bWaitForModemAnswer;
-extern bit bWaitForMonitorCmd;
-extern bit bEndOfMonitorTask;
-extern bit g_LockUar1;
-extern BYTE monitorCurTask;
-extern BYTE bMonitorConnected;
-extern BYTE msrCurTask;
-extern BYTE modemCurTask;
-extern BYTE g_nTime2StartAT;
-extern BYTE bEndOfCbuTask;
-extern BYTE nRegDenied;
-extern BYTE btrStatus;
-extern char ComBuf[MAX_RX1_BUF_LEN];
+volatile BYTE prevMainTask;
+volatile BYTE mainTask;
+//extern bit bWaitForModemAnswer;
+//extern bit bWaitForMonitorCmd;
+BYTE msrCurTask;
+//extern BYTE modemCurTask;
+//extern BYTE nRegDenied;
+BYTE btrStatus;
 extern int nTimeCnt;
-extern int iVoltage;
-//extern int BytesToSend;
+int iVoltage;
 BYTE nNoChargeCnt = 0;
 BYTE nMin4ChrgAlrt = 10;
-//
+bit bExtReset;
+
 
 #pragma used+
 void putchar1(char c)
@@ -181,7 +170,7 @@ void InitPeripherals()
 
 void DefineBtrStatus()
 {
-    BYTE prevBtrStatus = btrStatus;   
+//    BYTE prevBtrStatus = btrStatus;   
     
     if (iVoltage < BTR_EMPTY_LIMIT)         // <3500
         btrStatus = BTR_STATUS_EMPTY;
@@ -199,7 +188,7 @@ void DefineBtrStatus()
 
 void WakeUpProcedure(void)
 {
-    BYTE prevBtrStatus = btrStatus, pA = 0, pAfull;//, btrStatusCng = FALSE;  
+    BYTE prevBtrStatus = btrStatus;//, btrStatusCng = FALSE;  
     int alert;
     
 //    if ((prevMainTask != TASK_SLEEP) && (bExtReset == FALSE))
@@ -226,7 +215,7 @@ void WakeUpProcedure(void)
 //    bEndOfMeasureTask = FALSE;
     bEndOfModemTask = FALSE;
     bEndOfMonitorTask = TRUE;//FALSE;
-    bEndOfCbuTask = FALSE;  
+//    bEndOfCbuTask = FALSE;  
     g_bMngPumpNow = FALSE;  
     
 	//set condition for rtc communication
@@ -350,8 +339,8 @@ void GetNextMainTask()
     bWaitForMonitorCmd = FALSE;
     bCheckRx1Buf = FALSE;
     nTimeCnt = 0;      
-    g_PumpCmdNow = PUMP_NONE; 
-    g_bHighPrio = FALSE;             
+//    g_PumpCmdNow = PUMP_NONE; 
+//    g_bHighPrio = FALSE;             
 }
 
 void WDT_off(void)
@@ -639,7 +628,7 @@ PCIFR=(0<<PCIF3) | (0<<PCIF2) | (1<<PCIF1) | (0<<PCIF0);
 
     btrStatus = BTR_STATUS_EMPTY;   //SHUTDOUW;
     g_fRS485Call = 0;    
-    g_LockUar1 = FALSE;   
+//    g_LockUar1 = FALSE;   
     nNoChargeCnt = 0;  
     nMin4ChrgAlrt = 10;
 //    g_bMainPumpOpen = FALSE;  
@@ -660,23 +649,9 @@ BYTE UART1Select(BYTE newState)//uartTarget)
 {
     unsigned char curState = PORTD;
     unsigned char  tmp; //newState,
-/*    switch (uartTarget)
-    {
-    case UART_RADIO_UHF:
-        newState = 0x0;
-    break;
-    case UART_RS485:
-        newState = 0x10;
-    break;
-    case UART_DBG:
-        newState = 0x20;
-    break;
-    case UART_NONE:
-        newState = 0x30;
-    break;
-    }       */
-    if (g_LockUar1 == TRUE)
-        return FALSE;
+
+//    if (g_LockUar1 == TRUE)
+//        return FALSE;
     tmp = curState & 0x30;
     if (tmp == newState)
         return 0;
@@ -734,7 +709,6 @@ void SendDebugMsg(flash unsigned char *bufToSend)
     //MemCopy_to_cpu_e2(&Store_tx_buff[0], ComBuf, BytesToSend);
     //transmitt to local modem port
     TransmitBuf(2);
-//    bWaitForModemAnswer = FALSE;
 }
 
 void PrintOnlyNum(long val)

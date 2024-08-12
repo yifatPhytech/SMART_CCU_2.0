@@ -1,4 +1,5 @@
 #include "define.h"
+#include "Monitor_manager.h"
 #include "utils.h"
 //#include "Valve_Manager.h"
 #include "Pump_manager.h"
@@ -12,7 +13,6 @@
 #define SET_REQUEST 1
 
 #define REQ_ID      0           // LOGGER id
-//#define REQ_TIME    40
 #define REQ_IP      41
 #define REQ_PORT    42
 #define REQ_APN     43
@@ -23,20 +23,13 @@
 #define REQ_CPD     48  //CONNECTS PER DAY
 #define REQ_CI      49  //CONNECTS INTERVAL
 #define REQ_BTR     55
-//#define REQ_RSSI    56
-//#define REQ_TIMEZONE     57
 #define REQ_VER     58
-//#define REQ_NUM_SEN     59
 #define REQ_DISCNCT   61
-//#define REQ_EPOCH       64
 #define REQ_ICCID   65
-//#define REQ_MODEM       66
 #define REQ_CONNECT   67
 #define REQ_TEST_PUMP   68
 #define REQ_CBU_VER     69
 
-
-extern eeprom _tagAPPEEPROM AppEepromData;
 
 flash unsigned char IdentificationStr[] = "BEEPBEEP@";
 BYTE requestType;
@@ -44,22 +37,10 @@ BYTE requestLen;
 BYTE requestIndex;
 BYTE setResult;
 long lTimeFromLastTask;
-extern BYTE monitorCurTask;
-//extern BYTE fModemModel;
-extern flash unsigned char RomVersion[];
-extern int iVoltage;
-//extern BYTE rssi_val;
-extern char ComBuf[MAX_RX1_BUF_LEN];
-//extern char RxUart1Buf[MAX_RX1_BUF_LEN];
-//extern DateTime g_curTime;
-//extern int buffLen;
-//extern int BytesToSend;
-extern int TimeLeftForWaiting;
-extern char clockBuf[7]; 		 //buffer for all clock operation need
-//extern bit bCheckRx1Buf;
-extern bit bWaitForMonitorCmd;
-extern bit bEndOfMonitorTask;
-extern BYTE bMonitorConnected;
+BYTE monitorCurTask;
+bit bWaitForMonitorCmd;
+bit bEndOfMonitorTask;
+BYTE bMonitorConnected;
 
 void SendConnectString()
 {
@@ -218,7 +199,6 @@ void SendBackResult()
 void ExecuteSetCommand()
 {
     BYTE n;
-    int t;
 
     setResult = TRUE;
     switch (requestIndex)

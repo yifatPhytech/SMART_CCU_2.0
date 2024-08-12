@@ -15,9 +15,12 @@
 #define MODEM_PWR_ENABLE() (PORTD.7 = 1);   
 #define MODEM_PWR_DISABLE() (PORTD.7 = 0);
 
+extern eeprom _tagPortDefEEPROM ComponentArray[MAX_PORTS_CBU] ;
+extern flash unsigned char RomVersion[]; 
 extern flash unsigned char fSWUpdateAddress[];
+
 extern bit longAnswerExpected;
-extern bit bWaitForModemAnswer;
+//extern bit bWaitForModemAnswer;
 extern bit bEndOfModemTask;
 extern bit bNeedToWait4Answer;
 extern bit overFlow;
@@ -38,6 +41,9 @@ extern BYTE fSwUpdate;
 extern int nMaxWaitingTime;
 extern unsigned long OprtTbl[10] ;
 extern BYTE AccessTech[10] ;
+extern unsigned int nEzrFw2Upg;
+extern bit bReset;
+
 /////////////////////////////////////////////
 // modem_manager functions
 ////////////////////////////////////////////

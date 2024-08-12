@@ -8,6 +8,11 @@
 #define CBU_LED_BLINK   2
 
 extern bit bExtReset;
+extern BYTE btrStatus;
+extern int iVoltage;
+extern volatile BYTE prevMainTask;
+extern BYTE msrCurTask;
+extern volatile BYTE mainTask;
 
 
 /////////////////////////////////////////////

@@ -16,6 +16,15 @@
 #define EZR_RST_ENABLE() (PORTA.5 = 1);        
 #define EZR_RST_DISABLE() (PORTA.5 = 0);
 
+#define OBJ_NEW_VCU_DATA       40
+#define OBJ_NOT_IN_LST_VCU_DATA 41
+
+#define NO_DATA 2
+
+#define SIZE_BYTE_INDEX     1//4
+//#define DATA_CNT_BYTE_INDEX 2
+#define FIRST_DATA_INDEX    3
+
 #define TASK_MSR_READ       1
 #define TASK_MSR_INIT       2
 #define TASK_MSR_SAVE       3
@@ -26,27 +35,15 @@
 #define MSG_TYPE_POS    6
 #define EXT_MSG_POS     7
 
-extern eeprom _tagAPPEEPROM AppEepromData;
+//extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char ANSWER_ACK[] = "ACKACKACK@";
 static BYTE nBadAnswer = 0;
 static BYTE nRetry;
 static BYTE nParseAns;
 static BYTE fGotData;
 static BYTE nNoDataCnt = 0;
-//volatile BYTE fListenOrSend;
-
-
-extern bit bWait4WLSensor;
 bool bEndOfMeasureTask;
-extern BYTE msrCurTask;
-extern BYTE g_bHighPrio;
-#ifdef DebugMode
-extern volatile BYTE mainTask;
-#endif DebugMode
-extern BYTE flgUart1Error;
-//extern int BytesToSend;
 extern int nTimeCnt;
-extern char ComBuf[MAX_RX1_BUF_LEN];
 
 void InitEZRCom()
 {
@@ -68,7 +65,7 @@ void InitEZRCom()
 void ReadData()
 {
 //    unsigned int i;
-    bWait4WLSensor = TRUE;
+//    bWait4WLSensor = TRUE;
     nTimeCnt = 20;  // 2 sec timeout
     nRetry++;          
     memset(RxUart1Buf,0, MAX_RX1_BUF_LEN);
@@ -388,7 +385,7 @@ BYTE GetNextMsrTask()
         case TASK_MSR_CLOSURE:
             msrCurTask = TASK_NONE;
             bEndOfMeasureTask = true;
-            bWait4WLSensor = FALSE;
+//            bWait4WLSensor = FALSE;
         break;
         default:
     }
@@ -439,7 +436,7 @@ bool MeasureMain()
         case TASK_MSR_CLOSURE:       
             msrCurTask = TASK_NONE;
             bEndOfMeasureTask = true;
-            bWait4WLSensor = FALSE;
+//            bWait4WLSensor = FALSE;
              if (/*(nCycles > 3) ||*/  (nBadAnswer > 10) ||(nNoDataCnt > 60))       // todo - check if need
              {
                 ResetEZR();     

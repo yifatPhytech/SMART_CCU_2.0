@@ -25,29 +25,18 @@
 #define PERMANENT_BYTE_CNT    5
 #define PUMP_STATE_INDEX    43
 
-extern eeprom _tagPortDefEEPROM ComponentArray[];
-extern eeprom _tagAPPEEPROM AppEepromData;
-extern flash unsigned char RomVersion[]; 
+//extern eeprom _tagPortDefEEPROM ComponentArray[];
+//extern eeprom _tagAPPEEPROM AppEepromData;
+//extern flash unsigned char RomVersion[]; 
 extern eeprom _tagFlowDefEEPROM FlowDef[];
- 
-
-extern bit g_LockUar1;
-extern BYTE bEndOfCbuTask;
-extern BYTE msrCurTask;
-//extern int BytesToSend;
 extern int nTimeCnt;
-extern char ComBuf[MAX_RX1_BUF_LEN];
-extern DateTime g_LastCnctTime;
-extern int iVoltage;
-extern BYTE rssi_val;
+//extern int iVoltage;
+//extern BYTE rssi_val;
 
 static BYTE prevUART1Stat;
 int g_nFailureCnt = 0;
-extern volatile BYTE mainTask;
 char g_bCBUPumpState[2];
 
-//#define RS485_CTRL_RX() (PORTB.3 = 0);        //##
-//#define RS485_CTRL_TX() (PORTB.3 = 1);
 void BuildPackage(ERS485Command cmd, int prm)
 {
     BYTE size = 1;  
@@ -439,102 +428,3 @@ char SendRecRS485(ERS485Command cmd, int prm)
      ENABLE_CBU_INT();
      return res;
 }
-
-/*void RecSendRS485()
-{
-    #ifdef DebugMode
-    BYTE RES = 0;
-    #endif DebugMode    
-    DISABLE_CBU_INT();
-    InitCom(FALSE);   
-    g_LockUar1 = TRUE;
-    nTimeCnt = 15;
-    while ((nTimeCnt > 0) && (bCheckRx1Buf == FALSE));   
-    
-    if (bCheckRx1Buf == TRUE)     
-    {              
-        if (ParseCbuRequest() == TRUE)
-        {
-            RS485_CTRL_TX();
-            delay_ms(1);     
-            TransmitBuf(1);  
-            delay_ms(1);             
-            RS485_CTRL_RX();        
-            //DeInitCom();
-            #ifdef DebugMode
-            RES = 1;
-            #endif DebugMode        
-        } 
-        #ifdef DebugMode
-        else
-            RES = 2;       
-        #endif DebugMode        
-    } 
-    #ifdef DebugMode
-    else 
-    {      
-        RES = 3;    
-//        ComBuf[HEADER_INDEX] = CCU_HEADER;  
-//        ComBuf[1] = 1;
-//        ComBuf[2] = 2;
-//        ComBuf[3] = 3;  
-//        ComBuf[4] = '\n'; 
-//        BytesToSend = 5;
-//        RS485_CTRL_TX();
-//            delay_ms(1);     
-//            TransmitBuf(1);  
-//            delay_ms(1);             
-//            RS485_CTRL_RX();   
-    }  
-    #endif DebugMode  
-    g_LockUar1 = FALSE;
-//    g_fRS485Call = 0; 
-    DeInitCom();  
-    delay_ms(10);  
-    ENABLE_CBU_INT(); 
-    #ifdef DebugMode   
-    
-    SendDebugMsg("\r\nRecSendRS485 RES = \0");  
-    PrintNum(RES);
-    SendDebugMsg("\r\ncurrent mainTask = ");       
-    PrintNum(mainTask);    
-    #endif DebugMode   
-}*/
-
- /*
-void GetNextCBUTask()
-{
-    switch (msrCurTask)
-    {
-        case TASK_NONE:
-            msrCurTask = TASK_CBU_INIT;
-        break;
-        case  TASK_CBU_INIT:
-            msrCurTask = TASK_CBU_PUMP_STATUS;
-        break;
-        case TASK_CBU_PUMP_STATUS:  
-            msrCurTask = TASK_CBU_PULSE;
-        break;
-        case TASK_CBU_PULSE:
-            msrCurTask = TASK_CBU_4_20_1ST;
-        break;
-        case TASK_CBU_4_20_1ST:
-            msrCurTask = TASK_CBU_4_20_2ND;
-        break;
-        case TASK_CBU_4_20_2ND:  
-            msrCurTask = TASK_CBU_4_20_3RD;
-        break;
-        case TASK_CBU_4_20_3RD:  
-            if (g_curTime.minute == 0)
-                msrCurTask = TASK_CBU_BTR;
-            else
-                bEndOfCbuTask = TRUE;
-        break;     
-        case TASK_CBU_BTR:
-            bEndOfCbuTask = TRUE;
-        default:
-    }
-//    return CONTINUE;
-}
-
-*/

@@ -4,6 +4,10 @@
 #include "Valve_Manager.h"
 #include "modem_manager.h"
 #include "HW_manager.h"
+#include "Monitor_manager.h"
+
+#define FOUND_NOTHING   0
+#define FOUND_O     1
 
 #define FOUND_STAGE1     1
 #define FOUND_STAGE2     2
@@ -31,48 +35,30 @@
 #define FOUND_VERIZON_5     14
 #define FOUND_VERIZON_6     15
 
-extern eeprom _tagAPPEEPROM AppEepromData;
-//static char oneOperator[60];
+bit bWaitForModemAnswer;
+bit bCheckRxBuf;
+bit bCheckRx1Buf;
+BYTE g_fRS485Call;
+BYTE flgUart1Error;
 static BYTE curIndex;
 volatile BYTE findVer;
 volatile BYTE findStatus;
-volatile long curOprt;
-//volatile BYTE oprtStat;
 volatile BYTE NoRecDataU0Cnt;
 volatile BYTE NoRecDataU1Cnt;
-//bool fMinuteTimer;
-
-//extern BYTE g_HandlePump;;
+volatile BYTE g_bExtIntDtct;
 unsigned int rx1_buff_len;
 unsigned int buffLen;
+unsigned int rx0_buff_len;
+unsigned int nCntDown;
 int NextByteIndex;
-extern char ComBuf[MAX_RX1_BUF_LEN];
+int BytesToSend;
+int TimeLeftForWaiting;
+volatile long curOprt;
+char ComBuf[MAX_RX1_BUF_LEN];
 char DbgBuf[50]; 
 volatile char RxUart0Buf[MAX_RX_BUF_LEN];
 char RxUart1Buf[MAX_RX1_BUF_LEN];
-int BytesToSend;
-unsigned int rx0_buff_len;
-extern volatile BYTE mainTask;
-extern volatile BYTE prevMainTask;
-extern volatile BYTE g_bExtIntDtct;
-
-//extern BYTE bMonitorConnected;
-int TimeLeftForWaiting;
-bit bCheckRxBuf;
-bit bCheckRx1Buf;
 extern int nTimeCnt;
-extern bit bWaitForModemAnswer;
-extern bit bWaitForMonitorCmd;
-extern bit bWait4WLSensor;
-BYTE g_fRS485Call;
-extern BYTE g_nTime2StartAT;
-extern BYTE g_nTime2StartAT;
-extern int BytesToSend;
-BYTE flgUart1Error;
-unsigned int nCntDown;
-//extern unsigned int    g_OneMntCnt;
-//extern unsigned int g_sec2HndlPump;
-extern PUMP_CMD g_PumpCmdNow;
 
 // Timer 0 overflow interrupt service routine
 interrupt [TIM0_OVF] void timer0_ovf_isr(void)
@@ -103,8 +89,8 @@ interrupt [TIM1_COMPA] void timer1_compa_isr(void)
     {
          nTimeCnt--;
     }      
-    if (g_nTime2StartAT > 0)
-        g_nTime2StartAT--; 
+//    if (g_nTime2StartAT > 0)
+//        g_nTime2StartAT--; 
      
     if (TimeLeftForWaiting > 0)
     {
@@ -130,7 +116,7 @@ interrupt [TIM2_OVF] void timer2_ovf_isr(void)
         {              
             bCheckRx1Buf = TRUE;
             bWaitForMonitorCmd = FALSE;
-            bWait4WLSensor = FALSE;    
+//            bWait4WLSensor = FALSE;    
 //            bWait4RS485 = FALSE;
             buffLen = rx1_buff_len;
             rx1_buff_len = 0;

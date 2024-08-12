@@ -34,6 +34,7 @@ Data Stack size         : 1024
 #include "data_manager.h"
 #include "Ezr_com_manager.h"
 #include "Pump_manager.h"
+#include "Monitor_manager.h"
 
 // Declare your global variables here
 
@@ -42,6 +43,7 @@ void main(void)
 {
     BYTE i, temp;    
     long l;          
+    unsigned char powerOnReset;
     // Global enable interrupts
     #asm("sei")
 
@@ -73,8 +75,8 @@ void main(void)
     temp =  MCUSR;
 
     MCUSR = 0x00; //reset the reset source flags to 0
-//    if (powerOnReset)
-//        DeepSleep();
+    if (powerOnReset)
+        DeepSleep();
     // init all IO's and vars
     InitProgram();          
     #ifdef DebugMode
@@ -108,7 +110,7 @@ void main(void)
 //                    bEndOfMeasureTask = FALSE;
                     // usually go to sleep after measure
                     mainTask = TASK_SLEEP;   
-                    g_bAfterModem = FALSE;  
+//                    g_bAfterModem = FALSE;  
                     CheckPumpStatus();
                     CheckVCUStatus();  
                     CheckPumpFitStatus();
@@ -196,7 +198,7 @@ void main(void)
 //                                SendDebugMsg("\r\nNUM OF CMDS:");
 //                                PrintNum(g_cmdSndCnt);
 //                                #endif DebugMode      
-                                g_bAfterModem = TRUE;              
+//                                g_bAfterModem = TRUE;              
                         }
                     }  
                 }

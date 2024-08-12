@@ -10,16 +10,8 @@
 
 static SProtoMessage message;
 BYTE ezrState;
-extern long ezrVersion;
-extern eeprom _tagAPPEEPROM AppEepromData;
-//extern flash unsigned char fEZRUpdateAddress[];
+long ezrVersion;
 extern int nTimeCnt;
-extern bit bWait4WLSensor;
-extern char ComBuf[MAX_RX1_BUF_LEN];
-//extern int BytesToSend;
-//extern unsigned int buffLen;
-extern unsigned int nEzrFw2Upg;
-//extern unsigned int g_sec2HndlPump;
 
 void PROTOCOL_Init(void)
 {    
@@ -191,7 +183,7 @@ BYTE PROTOCOL_Task(EProtocolCommand cmd, BYTE bIsMore)
             message.vlvList[i] = vlvCmdArr[i].VCU_ID;
     }
     message.hdr.status = PROTO_STATUS_OK;//EzrShouldAnswer()? PROTO_STATUS_OK : PROTO_STATUS_DO_NOT_ANSWER_SENSOR;   
-    bWait4WLSensor = TRUE;                       
+//    bWait4WLSensor = TRUE;                       
     bCheckRx1Buf = FALSE;        
     rx1_buff_len = 0;
     SendRequest();       
