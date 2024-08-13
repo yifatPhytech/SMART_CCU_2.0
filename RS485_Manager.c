@@ -29,7 +29,7 @@
 //extern eeprom _tagAPPEEPROM AppEepromData;
 //extern flash unsigned char RomVersion[]; 
 extern eeprom _tagFlowDefEEPROM FlowDef[];
-extern int nTimeCnt;
+//extern int nTimeCnt;
 //extern int iVoltage;
 //extern BYTE rssi_val;
 
@@ -210,11 +210,11 @@ BYTE ParseCbuRequest()
       
     memset(ComBuf,0, 200);
     ComBuf[HEADER_INDEX] = CCU_HEADER;    
-    ComBuf[PAYLOAD_INDEX] = RxUart1Buf[PAYLOAD_INDEX];  //?               
+    ComBuf[PAYLOAD_INDEX] = 7;//RxUart1Buf[PAYLOAD_INDEX];  //?               
 
     switch (RxUart1Buf[PAYLOAD_INDEX])
     {       
-        case CMD_ALERT:    
+        case 97:    //CMD_ALERT:    
             SaveAlertData(&RxUart1Buf[PAYLOAD_INDEX+1]);  
             ComBuf[PAYLOAD_INDEX+1] = 1;
             payloadSize = 2;

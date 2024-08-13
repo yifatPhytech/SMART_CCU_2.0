@@ -24,7 +24,7 @@ typedef struct
 //                                      1        2  3  4  5   6  7  8  9   10   11     12         13                                14      15
 //eeprom _tagAPPEEPROM AppEepromData;// = {{0xED,0x3A,0x0B,0x00}, 1, 6, 4, 1, 0, 0, 0, 15, 0, "01#0", "425#", "proxy.phytech.com#00000000000000", "1018", "JTM2M#00000000000000000000000000"};
 //                                      0        4  5  6  7  9  10 12 14  15  16
-int nTimeCnt = -1;
+//int nTimeCnt = -1;
 
 //bit bReset = 0;
 

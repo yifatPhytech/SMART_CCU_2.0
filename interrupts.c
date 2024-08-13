@@ -58,7 +58,7 @@ char ComBuf[MAX_RX1_BUF_LEN];
 char DbgBuf[50]; 
 volatile char RxUart0Buf[MAX_RX_BUF_LEN];
 char RxUart1Buf[MAX_RX1_BUF_LEN];
-extern int nTimeCnt;
+int nTimeCnt;
 
 // Timer 0 overflow interrupt service routine
 interrupt [TIM0_OVF] void timer0_ovf_isr(void)

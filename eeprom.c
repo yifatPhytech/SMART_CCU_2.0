@@ -9,7 +9,7 @@ unsigned char eepromWriteBuf[MAX_DATA_2_EPRM_SIZE+2]; 	//buffer for eeprom write
 unsigned char e2cmdByte;			//buffer for the eeprom command byte
 char e2_writeFlag;
 //extern char err_buf[ERR_BUF_SIZE];
-volatile unsigned char eepromReadBuf[];	//buffer for eeprom read operation
+volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];	//buffer for eeprom read operation
 
 //write address eeprom page
 char e2_writePage(unsigned int address, char write_length, char* string_1)

@@ -131,7 +131,7 @@ typedef struct
     unsigned short versionUpdate;
 } _tagBLEEPROM;
 
-extern int nTimeCnt;
+//extern int nTimeCnt;
 eeprom _tagBLEEPROM BlEepromData @0x0400;
 eeprom _tagBLEEPROM BlEepromData = {0};
 eeprom _tagPortDefEEPROM ComponentArray[MAX_PORTS_CBU] @0x300;
@@ -223,7 +223,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',8, YEAR, 21};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',8, YEAR, 22};   //__BUILD__
 
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
@@ -1262,7 +1262,7 @@ BYTE FillList(BYTE* map, BYTE vlvCnt)
     {
         for (j = 0; j < 4; j++)
             newId.bVal[j] = ComBuf[bufIdx++];   
-        if ((newId.lVal > 500000) && (newId.lVal < 5000000))
+        if ((newId.lVal > 500000) && (newId.lVal < 50000000))
         {
             //insert each valve  
             vlvIndex = InsertVlv(newId.lVal);
@@ -1744,20 +1744,17 @@ BYTE ParseValveCommandsWithDelay(int index)
 //     memcpy(ComBuf, &RxUart0Buf[GetBufferIndex(index++)], len+1);
     for (i = 0; i < len+1; i++) 
     {
-        ComBuf[i] = RxUart0Buf[GetBufferIndex(index++)];    
-        PrintNum(ComBuf[i]);
-//    #ifdef ValveDebug  
-//        putchar1(ComBuf[i]);
-//    #endif ValveDebug  
+        ComBuf[i] = RxUart0Buf[GetBufferIndex(index++)];      
+        #ifdef DebugMode  
+            PrintOnlyNum(RxUart1Buf[i]); 
+            putchar1(',');
+        #endif DebugMode    
     } 
     cs = CheckSum(ComBuf, len, 1);
     
     //if wrong cs
     if (cs != ComBuf[len])  
     {          
-    #ifdef ValveDebug  
-        putchar1('E');            //
-    #endif ValveDebug  
         return 0xFF;            
     }     
     bIsMoreVlvCmd = ComBuf[len-1];      
@@ -2398,8 +2395,8 @@ void GetNextPost()
 
 BYTE GetNextTask()
 {
-    if (nTimeCnt > 0)
-        return WAIT;
+//    if (nTimeCnt > 0)
+//        return WAIT;
 
     // first task-
     if (modemCurTask == TASK_NONE)
@@ -2428,8 +2425,8 @@ BYTE GetNextTask()
         if  ((bWaitForModemAnswer == TRUE) && (TimeLeftForWaiting > (int)0))
             return WAIT;   
     
-    if (ModemResponse == NO_ANSWER)
-        return WAIT;
+//    if (ModemResponse == NO_ANSWER)
+//        return WAIT;
     if (g_bExtIntDtct == TRUE)
     {                        
         prevMainTask = TASK_MODEM;
@@ -2850,7 +2847,7 @@ BYTE GetNextTask()
                                     modemCurSubTask = SUB_TASK_MODEM_EXIT;
                         break;
                         case SUB_TASK_DELAY:
-                            delay_ms(500);
+//                            SendDebugMsg("\r\nSUB_TASK_DELAY ");   
                             if ((nTimeCnt <= 0) || (!IsModemOn()))
                                 modemCurSubTask = taskAfterDelay;
                         break;
@@ -3251,6 +3248,9 @@ void ModemMain()
                     longAnswerExpected = 0;
                     //ask modem RSSI with network host
                     SendATCmd(AT_CSQ,25,1);
+                break;    
+                case SUB_TASK_DELAY:
+                    delay_ms(100);
                 break;
             }
         break;
@@ -3382,9 +3382,14 @@ void ModemMain()
                 case SUB_TASK_MODEM_CLOSE_MDM:                                                                                   
                     SendATCmd(AT_PWROFF,60,2);
                     g_bModemConnect = FALSE;  
+                break;    
+                case SUB_TASK_DELAY:     
+                    delay_ms(500);       
                 break;
                 case SUB_TASK_MODEM_OFF:
-                    ModemHwShdn();
+                    ModemHwShdn();     
+                    delay_ms(500);     
+                    ModemResponse = TASK_COMPLETE;
                 break;
                 case SUB_TASK_MODEM_EXIT:
                     bEndOfModemTask = TRUE;  
@@ -3429,8 +3434,8 @@ BYTE SendRecATCmd(flash unsigned char *bufToSend, BYTE tOut)
 {
     BYTE bRes = FALSE; 
     SendATCmd(bufToSend, tOut,1);
-    nTimeCnt = tOut;
-    while ((nTimeCnt > 0) && (bCheckRxBuf != TRUE));
+//    nTimeCnt = tOut;
+    while ((TimeLeftForWaiting > 0) && (bCheckRxBuf != TRUE));
     if (bCheckRxBuf == TRUE)
         bRes =  IsOK();
     #ifdef DebugMode
@@ -3510,9 +3515,8 @@ BYTE SetModemBaudRate()
         return FALSE;
     if (! SendRecATCmd(AT_SET_BAUDRATE, 50))        //setup modem to baudrate 19200
         return FALSE;
-    if (! SendRecATCmd(AT_CCID, 50))       
-        return FALSE;
-    GetICCID();    
+    if (SendRecATCmd(AT_CCID, 50))       
+        GetICCID();    
 //    fModemModel = MODEM_GE; //MODEM_NONE;
 //    if (! SendRecATCmd(AT_CGMM, 50))       
 //        return FALSE;

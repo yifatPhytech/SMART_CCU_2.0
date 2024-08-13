@@ -11,7 +11,7 @@
 static SProtoMessage message;
 BYTE ezrState;
 long ezrVersion;
-extern int nTimeCnt;
+//extern int nTimeCnt;
 
 void PROTOCOL_Init(void)
 {    

@@ -21,7 +21,7 @@
 static _ExtEpromPointers  eprmPonter;
 static unsigned int pOriginalReadBlock;
 //extern char e2_writeFlag;
-char DataBlock[];
+char DataBlock[MAX_DATA_2_EPRM_SIZE];
 //extern volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];   //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
 //extern unsigned int objToMsr;
 
@@ -94,7 +94,7 @@ char LoadVCUIds()
          
     for (i = 0; i < MAX_CMD; i++)     
     {                  
-        if ((vlvCmdArr[i].VCU_ID < 500000) || (vlvCmdArr[i].VCU_ID > 5000000))
+        if ((vlvCmdArr[i].VCU_ID < 500000) || (vlvCmdArr[i].VCU_ID > 50000000))
             SaveVCUIdAtEeprom(0, i);       
     }
 	e2_writeFlag = 0; 				// enable other use                  
@@ -113,23 +113,23 @@ BYTE ReadPointers()
     memcpy((char*)&eprmPonter, eepromReadBuf, POINTERS_SIZE);
 /*    #ifdef DebugMode
     SendDebugMsg("\r\nReadPointers");   
-    SendDebugMsg("\r\npVCUDataWrite: ");
-    PrintNum(eprmPonter.pVCUDataWrite);
-    SendDebugMsg("\r\npVCUDataRead: ");
-    PrintNum(eprmPonter.pVCUDataRead);
+//    SendDebugMsg("\r\npVCUDataWrite: ");
+//    PrintNum(eprmPonter.pVCUDataWrite);
+//    SendDebugMsg("\r\npVCUDataRead: ");
+//    PrintNum(eprmPonter.pVCUDataRead);
     SendDebugMsg("\r\npCmpsDataWrite: ");
     PrintNum(eprmPonter.pCmpsDataWrite);
     SendDebugMsg("\r\npCmpsDataRead: ");
     PrintNum(eprmPonter.pCmpsDataRead);
-    SendDebugMsg("\r\npPmpActionWrite: ");
-    PrintNum(eprmPonter.pPmpActionWrite);
-    SendDebugMsg("\r\npPmpActionRead: ");
-    PrintNum(eprmPonter.pPmpActionRead);
-    SendDebugMsg("\r\npAlertWrite: ");
-    PrintNum(eprmPonter.pAlertWrite);
-    SendDebugMsg("\r\npAlertRead: ");
-    PrintNum(eprmPonter.pAlertRead);
-    #endif DebugMode  */
+//    SendDebugMsg("\r\npPmpActionWrite: ");
+//    PrintNum(eprmPonter.pPmpActionWrite);
+//    SendDebugMsg("\r\npPmpActionRead: ");
+//    PrintNum(eprmPonter.pPmpActionRead);
+//    SendDebugMsg("\r\npAlertWrite: ");
+//    PrintNum(eprmPonter.pAlertWrite);
+//    SendDebugMsg("\r\npAlertRead: ");
+//    PrintNum(eprmPonter.pAlertRead);
+    #endif DebugMode    */
     return TRUE;
 }
 
@@ -137,25 +137,25 @@ char SavePointers()
 {
 /*    #ifdef DebugMode
     SendDebugMsg("\r\nSave Pointers");   
-    SendDebugMsg("\r\npVCUDataWrite: ");
-    PrintNum(eprmPonter.pVCUDataWrite);
-    SendDebugMsg("\r\npVCUDataRead: ");
-    PrintNum(eprmPonter.pVCUDataRead);
+//    SendDebugMsg("\r\npVCUDataWrite: ");
+//    PrintNum(eprmPonter.pVCUDataWrite);
+//    SendDebugMsg("\r\npVCUDataRead: ");
+//    PrintNum(eprmPonter.pVCUDataRead);
    
   SendDebugMsg("\r\npCmpsDataWrite: ");
     PrintNum(eprmPonter.pCmpsDataWrite);
     SendDebugMsg("\r\npCmpsDataRead: ");
     PrintNum(eprmPonter.pCmpsDataRead);
-   SendDebugMsg("\r\npPmpActionWrite: ");
-    PrintNum(eprmPonter.pPmpActionWrite);
-    SendDebugMsg("\r\npPmpActionRead: ");
-    PrintNum(eprmPonter.pPmpActionRead);
-    SendDebugMsg("\r\npAlertWrite: ");
-    PrintNum(eprmPonter.pAlertWrite);
-    SendDebugMsg("\r\npAlertRead: ");
-    PrintNum(eprmPonter.pAlertRead);
+//   SendDebugMsg("\r\npPmpActionWrite: ");
+//    PrintNum(eprmPonter.pPmpActionWrite);
+//    SendDebugMsg("\r\npPmpActionRead: ");
+//    PrintNum(eprmPonter.pPmpActionRead);
+//    SendDebugMsg("\r\npAlertWrite: ");
+//    PrintNum(eprmPonter.pAlertWrite);
+//    SendDebugMsg("\r\npAlertRead: ");
+//    PrintNum(eprmPonter.pAlertRead);
    
-   #endif DebugMode */  
+   #endif DebugMode     */
     return WriteBufIntoExte2((char *)&eprmPonter, 0, POINTERS_SIZE); 
 }
 
@@ -338,7 +338,7 @@ int GetEpromPcktCnt(BYTE nType)
         break;
         case POST_CBU_DATA:   
 //            #ifdef DebugMode
-//            SendDebugMsg("\r\npCmpsDataWrite= \0");   
+//            SendDebugMsg("\r\nGetEpromPcktCnt: pCmpsDataWrite= \0");   
 //            PrintNum(eprmPonter.pCmpsDataWrite);
 //            SendDebugMsg("\r\npCmpsDataRead= \0");   
 //            PrintNum(eprmPonter.pCmpsDataRead);            
@@ -346,7 +346,7 @@ int GetEpromPcktCnt(BYTE nType)
             if (eprmPonter.pCmpsDataOverlap == 0)
                 return (eprmPonter.pCmpsDataWrite - eprmPonter.pCmpsDataRead) / CBU_MNT_DATA_SIZE;
             else        
-                return (CMPNT_MEMORY_END - eprmPonter.pVCUDataRead) / VCU_PACKET_SIZE;
+                return (CMPNT_MEMORY_END - eprmPonter.pCmpsDataRead) / CBU_MNT_DATA_SIZE;
         break;
         case POST_VCU_DATA:              
             if (eprmPonter.pVCUDataOverlap == 0)
@@ -505,7 +505,13 @@ void InitWritPntr(BYTE nPacketType)
                 eprmPonter.pPmpActionWrite = PUMP_ACTION_MEMORY_START;           
             }
         break;
-        case POST_CBU_DATA:     
+        case POST_CBU_DATA:   
+//         #ifdef DebugMode
+//            SendDebugMsg("\r\nInitWritPntr: pCmpsDataWrite= \0");   
+//            PrintNum(eprmPonter.pCmpsDataWrite);
+//            SendDebugMsg("\r\npCmpsDataRead= \0");   
+//            PrintNum(eprmPonter.pCmpsDataRead);            
+//            #endif DebugMode    
             if (eprmPonter.pCmpsDataRead == eprmPonter.pCmpsDataWrite)
             {              
                 eprmPonter.pCmpsDataRead = CMPNT_MEMORY_START;            
@@ -563,8 +569,9 @@ BYTE ReadPacket(BYTE nPacketType)
 //    #ifdef DebugMode
 //    SendDebugMsg("\r\nReadPacket of type ");
 //    PrintNum(nPacketType);
-//    SendDebugMsg("\r\npRead=  ");
-//    PrintNum(pRead);
+//    SendDebugMsg("\r\npRead=  ");     
+//    PrintNum(pRead); 
+//    PrintNum(eprmPonter.pCmpsDataRead); 
 //    #endif DebugMode 
 	if(CopyBlockIntoRam(pRead, nSize ) == FALSE) //copy data block at the pBread address
     {
@@ -584,7 +591,14 @@ BYTE ReadPacket(BYTE nPacketType)
             {
                 eprmPonter.pCmpsDataRead = CMPNT_MEMORY_START;   
                 eprmPonter.pCmpsDataOverlap = 0;                  
-            }     
+            } 
+//            #ifdef DebugMode
+//            SendDebugMsg("\r\nReadPacket: pCmpsDataWrite= \0");   
+//            PrintNum(eprmPonter.pCmpsDataWrite);
+//            SendDebugMsg("\r\npCmpsDataRead= \0");   
+//            PrintNum(eprmPonter.pCmpsDataRead);            
+//            #endif DebugMode    
+    
         break;
         case POST_ALERT:
             eprmPonter.pAlertRead += ALERTS_MEMORY_PACKET_SIZE;  

@@ -43,7 +43,7 @@ static BYTE nParseAns;
 static BYTE fGotData;
 static BYTE nNoDataCnt = 0;
 bool bEndOfMeasureTask;
-extern int nTimeCnt;
+//extern int nTimeCnt;
 
 void InitEZRCom()
 {

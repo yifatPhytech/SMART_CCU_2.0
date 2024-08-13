@@ -24,7 +24,7 @@ BYTE msrCurTask;
 //extern BYTE modemCurTask;
 //extern BYTE nRegDenied;
 BYTE btrStatus;
-extern int nTimeCnt;
+//extern int nTimeCnt;
 int iVoltage;
 BYTE nNoChargeCnt = 0;
 BYTE nMin4ChrgAlrt = 10;

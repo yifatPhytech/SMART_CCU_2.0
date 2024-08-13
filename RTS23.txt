@@ -163,7 +163,11 @@
             4. use same bootloader adress to atmel FOTA & EZR FOTA.    
             5. add energy managment: 1> if 10 minutes in a row there was no power from MCU - send alert 101. later send this alert once in an our.
                2> when CCU battery gets to 3700 - send alert message 102 and cut off power. 
-            U.8.24.21
+            U.8.24.21        
+12/08/2024  1. arrangement of the code
+            2. GetEpromPcktCnt - fix bug of devide number of packkets with CBU_MNT_DATA_SIZE
+            3. allow gets VCU id until 50 million (not 5...)
+            U.8.24.22
             
             
             

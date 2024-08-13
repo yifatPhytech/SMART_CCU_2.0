@@ -19,6 +19,7 @@ extern int BytesToSend;
 extern char ComBuf[MAX_RX1_BUF_LEN];
 extern volatile BYTE g_bExtIntDtct;
 extern bit bWaitForModemAnswer;
+extern int nTimeCnt;
 
 
 #define ENABLE_TIMER2()    (TCCR2B=(0<<WGM22) | (1<<CS22) | (1<<CS21) | (1<<CS20));

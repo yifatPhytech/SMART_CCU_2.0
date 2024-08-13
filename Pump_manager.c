@@ -212,6 +212,8 @@ void CheckPumpStatus()
     #ifdef DebugMode        
     SendDebugMsg("\r\nCheck pump status ");     
     PrintNum(i);
+    SendDebugMsg("\r\nIsPump Open ");     
+    PrintNum(pumpAsVlv[i].IsPumpOpen);
     #endif          
         if (pumpAsVlv[i].IsPumpOpen == FALSE)   
         {
