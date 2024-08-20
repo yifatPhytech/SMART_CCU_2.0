@@ -113,7 +113,7 @@ void main(void)
 //                    g_bAfterModem = FALSE;  
                     CheckPumpStatus();
                     CheckVCUStatus();  
-                    CheckPumpFitStatus();
+//                    CheckPumpFitStatus();
 //                    PrintVlvArrStatus(); 
                     #ifdef DebugMode
                     SendDebugMsg("\r\nfINISH MSR \0");

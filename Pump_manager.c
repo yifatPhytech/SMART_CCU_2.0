@@ -43,8 +43,9 @@ void InitPumpCmdUnit()
     {
         InitCmd(&pumpAsVlv[i].cmdData);
         pumpAsVlv[i].IsCmd4Pump = 0;   
-        pumpAsVlv[i].IsPumpOpen = 0;          
-        pumpAsVlv[i].nextIrg = NULL;    //.iDuration = 0;//NULL;      
+        pumpAsVlv[i].IsPumpOpen = 0;  
+        InitCmd(&pumpAsVlv[i].nextIrg);        
+//        pumpAsVlv[i].nextIrg = NULL;    //.iDuration = 0;//NULL;      
     }
 }
 
@@ -176,20 +177,20 @@ void OpenPumpCmd(BYTE pmpIdx)
 //    #endif DebugMode   
 }
 
-void ClosePumpCmd(BYTE pmpIdx)
+/*void ClosePumpCmd(BYTE pmpIdx)
 {
     DateTime dt;
     
     CloseMainPump(pmpIdx, TRUE);
     if (pumpAsVlv[pmpIdx].cmdData.cycles == 0)  
     {               
-        if (pumpAsVlv[pmpIdx].nextIrg == NULL)
+        if (pumpAsVlv[pmpIdx].nextIrg.iDuration == 0)
             pumpAsVlv[pmpIdx].IsCmd4Pump = FALSE;      
         else                                       
         {
-            pumpAsVlv[pmpIdx].cmdData = *pumpAsVlv[pmpIdx].nextIrg;
-            free(pumpAsVlv[pmpIdx].nextIrg);
-            pumpAsVlv[pmpIdx].nextIrg = NULL; 
+            pumpAsVlv[pmpIdx].cmdData = pumpAsVlv[pmpIdx].nextIrg;
+//            free(pumpAsVlv[pmpIdx].nextIrg);
+            InitCmd(&pumpAsVlv[pmpIdx].nextIrg);// = NULL; 
         }
     }            
     else         
@@ -197,6 +198,32 @@ void ClosePumpCmd(BYTE pmpIdx)
         dt = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.offTime, g_curTime);  
         pumpAsVlv[pmpIdx].cmdData.startTime.hour = dt.hour;   
         pumpAsVlv[pmpIdx].cmdData.startTime.minute = dt.minute;   
+    }
+} */
+
+void ClosePumpCmd(BYTE pmpIdx)
+{
+    DateTime dt;
+    
+    CloseMainPump(pmpIdx, TRUE);     
+    
+    if (pumpAsVlv[pmpIdx].nextIrg.iDuration > 0)         // if got next irrigation - it cancelled the next cycles if were
+    {
+        pumpAsVlv[pmpIdx].cmdData = pumpAsVlv[pmpIdx].nextIrg;
+        InitCmd(&pumpAsVlv[pmpIdx].nextIrg);// = NULL; 
+    }    
+    else     
+    {
+        if (pumpAsVlv[pmpIdx].cmdData.cycles == 0)        // if no next and no more cycles - pump is free
+        {               
+            pumpAsVlv[pmpIdx].IsCmd4Pump = FALSE;      
+        }                                                   
+        else                                                // if has more cycles - calc next opening time
+        {
+            dt = GetTimeAfterDelay(pumpAsVlv[pmpIdx].cmdData.offTime, g_curTime);  
+            pumpAsVlv[pmpIdx].cmdData.startTime.hour = dt.hour;   
+            pumpAsVlv[pmpIdx].cmdData.startTime.minute = dt.minute;   
+        }
     }
 }
 
@@ -326,27 +353,28 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
         #ifdef DebugMode  
         SendDebugMsg("\r\nnext Irg \0");
         #endif DebugMode 
-        if (pumpAsVlv[pumpIdx].nextIrg == NULL)   
-        {
-            pumpAsVlv[pumpIdx].nextIrg = (CommandData*)malloc(sizeof(CommandData));       
-        }
-        if (pumpAsVlv[pumpIdx].nextIrg != NULL)
+//        if (pumpAsVlv[pumpIdx].nextIrg == NULL)   
+//        {
+//            pumpAsVlv[pumpIdx].nextIrg = (CommandData*)malloc(sizeof(CommandData));       
+//        }
+//        if (pumpAsVlv[pumpIdx].nextIrg != NULL)
         { 
-            pumpAsVlv[pumpIdx].nextIrg->iDuration = dur;
-            pumpAsVlv[pumpIdx].nextIrg->startTime = t;   
-            pumpAsVlv[pumpIdx].nextIrg->offTime = offTime;    
-            pumpAsVlv[pumpIdx].nextIrg->cycles = cycles;    
-            pumpAsVlv[pumpIdx].nextIrg->index = cmdIndex;            //vlvCmdArr[index].nextIrg = pNxtIrg;
+            pumpAsVlv[pumpIdx].nextIrg.iDuration = dur;
+            pumpAsVlv[pumpIdx].nextIrg.startTime = t;   
+            pumpAsVlv[pumpIdx].nextIrg.offTime = offTime;    
+            pumpAsVlv[pumpIdx].nextIrg.cycles = cycles;    
+            pumpAsVlv[pumpIdx].nextIrg.index = cmdIndex;              
+//            pumpAsVlv[pumpIdx].cmdData.cycles = 0;           // current irrigation should end anyway after this cycle, never mind if there was more cycles
             #ifdef DebugMode  
             SendDebugMsg("\r\nsetup next pump work\0");
             #endif DebugMode     
         }  
-        else
-        {
-            #ifdef DebugMode  
-            SendDebugMsg("\r\nallocate mem fail1\0");
-            #endif DebugMode     
-        }
+//        else
+//        {
+//            #ifdef DebugMode  
+//            SendDebugMsg("\r\nallocate mem fail1\0");
+//            #endif DebugMode     
+//        }
     }
 }
 

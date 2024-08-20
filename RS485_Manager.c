@@ -121,7 +121,7 @@ void InitCom(BYTE bSend)
     ///////////// WAKE-UP CBU //////////////     
     BuildPackage(CMD_WU, 0);
     TransmitBuf(1);    
-    delay_ms(100);
+    delay_ms(600);
 //    bWait4RS485 = TRUE;
 }
 
@@ -173,19 +173,19 @@ BYTE ValidateCBUHeader()
     
     if (RxUart1Buf[HEADER_INDEX] != CBU_HEADER)  
     {
-//        #ifdef DebugMode
-//        SendDebugMsg("\r\nHeader Not fit\0");     
-//        #endif DebugMode                       
+        #ifdef DebugMode
+        SendDebugMsg("\r\nHeader Not fit\0");     
+        #endif DebugMode                       
         return ERROR;  
     }
     pctSize = RxUart1Buf[SIZE_INDEX];
     if (pctSize > buffLen)
     {
-//        #ifdef DebugMode
-//        SendDebugMsg("\r\nSize Not fit: buffLen, pctSize\0");  
-//        PrintNum(buffLen);   
-//        PrintNum(pctSize);   
-//        #endif DebugMode                       
+        #ifdef DebugMode
+        SendDebugMsg("\r\nSize Not fit: buffLen, pctSize\0");  
+        PrintNum(buffLen);   
+        PrintNum(pctSize);   
+        #endif DebugMode                       
         return ERROR;  
     }
     crc = bytes2int(&RxUart1Buf[CRC_INDEX]);         
@@ -210,11 +210,11 @@ BYTE ParseCbuRequest()
       
     memset(ComBuf,0, 200);
     ComBuf[HEADER_INDEX] = CCU_HEADER;    
-    ComBuf[PAYLOAD_INDEX] = 7;//RxUart1Buf[PAYLOAD_INDEX];  //?               
+    ComBuf[PAYLOAD_INDEX] = RxUart1Buf[PAYLOAD_INDEX];  //?               
 
     switch (RxUart1Buf[PAYLOAD_INDEX])
     {       
-        case 97:    //CMD_ALERT:    
+        case CMD_ALERT:    //CMD_ALERT:    
             SaveAlertData(&RxUart1Buf[PAYLOAD_INDEX+1]);  
             ComBuf[PAYLOAD_INDEX+1] = 1;
             payloadSize = 2;
@@ -304,8 +304,8 @@ BYTE ParseCbuRequest()
     int2bytes(crc, &ComBuf[CRC_INDEX]);        
     ComBuf[4+payloadSize] = '\n'; 
     BytesToSend = payloadSize + PERMANENT_BYTE_CNT;  
-    SetUART1BaudRate(RATE9600); //(RATE19200);     
-    prevUART1Stat = (PORTD  & 0x30);    //>> 4) & 0x03);
+//    SetUART1BaudRate(RATE9600); //(RATE19200);   //  
+//    prevUART1Stat = (PORTD  & 0x30);    //>> 4) & 0x03);
     UART1Select(UART_RS485);        
     RS485_CTRL_TX();
     delay_ms(1);     
@@ -339,7 +339,9 @@ BYTE ParseCbuResponse(ERS485Command cmd)
     break; 
     case CMD_PUMP1_MNG:
     case CMD_PUMP2_MNG:
-    case CMD_SET_CBU_DEF:
+    case CMD_SET_CBU_DEF:  
+    case CMD_LED:
+    case CMD_RST_FLOW:
         if (RxUart1Buf[PAYLOAD_INDEX+1] == 1)
             res = 1;
         break;        
@@ -400,16 +402,20 @@ char SendRecRS485(ERS485Command cmd, int prm)
     nTimeCnt = 20;
     while ((nTimeCnt > 0) && (bCheckRx1Buf == FALSE));
     
-    DeInitCom();    
+    if (cmd != CMD_GET_MSG)
+        DeInitCom();    
      if (bCheckRx1Buf == TRUE)     
     {              
-        #ifdef DebugMode
-        SendDebugMsg("\r\nmsg arrived. buffLen= \0");     
-        PrintNum(buffLen);    
-        for (i = 0; i < buffLen; i++) 
+        #ifdef DebugMode   
+        if (cmd != CMD_GET_MSG)
         {
-            PrintOnlyNum(RxUart1Buf[i]); 
-            putchar1(',');  
+            SendDebugMsg("\r\nmsg arrived. buffLen= \0");     
+            PrintNum(buffLen);    
+            for (i = 0; i < buffLen; i++) 
+            {
+                PrintOnlyNum(RxUart1Buf[i]); 
+                putchar1(',');  
+            }               
         }
 //            PrintNum(RxUart1Buf[i]);  
         #endif DebugMode           

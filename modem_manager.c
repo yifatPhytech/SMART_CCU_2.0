@@ -15,7 +15,7 @@
 #include "RS485_Manager.h"
 #include "Monitor_manager.h"
 
-#define ISRAEL_QUICK_CONNECT
+//#define ISRAEL_QUICK_CONNECT
 //#define SMART_SERVER
 #define TEST_DURATION       15
 
@@ -223,7 +223,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',8, YEAR, 22};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',8, YEAR, 24};   //__BUILD__
 
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
@@ -291,14 +291,17 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
             }
         }                    
     }                  
-     #ifdef DebugMode  
     else
-    { 
+    {         
+        bWaitForModemAnswer = FALSE;
+     #ifdef DebugMode  
         SendDebugMsg("\r\ncontinue modem from last task=\0");      
         PrintNum(modemCurTask); 
-        PrintNum(modemCurSubTask);       
-    }           
+        PrintNum(modemCurSubTask); 
+        SendDebugMsg("\r\nModemResponse=\0");      
+        PrintNum(ModemResponse);      
     #endif DebugMode
+    }           
     bEndOfModemTask = FALSE;
     bConnectOK = FALSE;
 //    dataSentOK = FALSE;
@@ -1746,7 +1749,7 @@ BYTE ParseValveCommandsWithDelay(int index)
     {
         ComBuf[i] = RxUart0Buf[GetBufferIndex(index++)];      
         #ifdef DebugMode  
-            PrintOnlyNum(RxUart1Buf[i]); 
+            PrintOnlyNum(ComBuf[i]); 
             putchar1(',');
         #endif DebugMode    
     } 

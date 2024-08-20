@@ -8,7 +8,7 @@ typedef struct _PumpUnit
     BYTE            IsCmd4Pump;    
     BYTE            IsPumpOpen;    
     DateTime        stopTimeStamp;     
-    CommandData*    nextIrg;
+    CommandData    nextIrg;
 }PumpUnit;
 
 

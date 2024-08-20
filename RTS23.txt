@@ -167,7 +167,16 @@
 12/08/2024  1. arrangement of the code
             2. GetEpromPcktCnt - fix bug of devide number of packkets with CBU_MNT_DATA_SIZE
             3. allow gets VCU id until 50 million (not 5...)
-            U.8.24.22
+            U.8.24.22     
+14/08/2024  1. enlarge delay after wakeup CBU to 600 ms instead of 100.
+            2. do not turn off pump if status doesnt fit.
+            U.8.24.23     
+15/08/2024  1. replace next command for pump - object instead of pointer.
+            2. if pump gets new command during pulse irrigation while it on - replace to new command when current pulse finishes. (new command prior next cycle)
+            3. finish CBU alert protocol
+            4. do not close pump if status doesnt fit
+            U.8.24.24
+             
             
             
             
