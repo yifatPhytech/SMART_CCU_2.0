@@ -223,7 +223,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',8, YEAR, 24};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',8, YEAR, 25};   //__BUILD__
 
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
@@ -951,9 +951,11 @@ void SendGetSWUpdate()
 //        j = CopyFlashToBuf(&ComBuf[n], fEZRUpdateAddress);   
     n += j;
     if (fSwUpdate == 1)                                   
-        j = CopyFlashToBuf(&ComBuf[n], AT_GET_SW_STATUS_4);   
-    if ((fSwUpdate == 2) || (fSwUpdate == 3))     
-        j = CopyFlashToBuf(&ComBuf[n], AT_GET_SW_STATUS_5);   
+        j = CopyFlashToBuf(&ComBuf[n], AT_GET_SW_STATUS_ATM);   
+    if (fSwUpdate == 2)      
+        j = CopyFlashToBuf(&ComBuf[n], AT_GET_SW_STATUS_EZR);
+    if (fSwUpdate == 3)  
+        j = CopyFlashToBuf(&ComBuf[n], AT_GET_SW_STATUS_CBU); 
     n += j;
     
     while (i > 0)

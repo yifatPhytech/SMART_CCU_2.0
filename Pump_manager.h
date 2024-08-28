@@ -33,7 +33,7 @@ void InitPumpCmdUnit();
 
 unsigned int GetPumpCmdIdx(BYTE pmpIdx);
 
-void CheckPumpFitStatus();
+//void CheckPumpFitStatus();
 
 void TestMainPump(BYTE nDur);
 

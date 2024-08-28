@@ -175,7 +175,9 @@
             2. if pump gets new command during pulse irrigation while it on - replace to new command when current pulse finishes. (new command prior next cycle)
             3. finish CBU alert protocol
             4. do not close pump if status doesnt fit
-            U.8.24.24
+            U.8.24.24     
+27/08/2024  set different API for EZR FOTA & CBU FOTA.
+            U.8.24.25 
              
             
             

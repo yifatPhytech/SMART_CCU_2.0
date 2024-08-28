@@ -25,7 +25,7 @@ BYTE GetCurPumpStat(BYTE idx)
     return pumpAsVlv[idx].IsPumpOpen;
 }
 
-void CheckPumpFitStatus()
+/*void CheckPumpFitStatus()
 {
     BYTE i;
     for (i = 0; i < 2; i++)
@@ -34,7 +34,7 @@ void CheckPumpFitStatus()
      // if pump logic state at CBU is open, and at CCU - it closed      //TODO  add check for 2nd pump
         if ((g_bCBUPumpState[i] == 1) &&  (pumpAsVlv[i].IsPumpOpen == FALSE))   //(g_bMainPumpOpen == FALSE))            
             CloseMainPump(i, TRUE);
-}
+}*/
 
 void InitPumpCmdUnit()
 {
