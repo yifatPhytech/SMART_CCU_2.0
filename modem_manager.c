@@ -229,7 +229,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',7, YEAR, 23};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',8, YEAR, 30};   //__BUILD__
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 
@@ -1359,7 +1359,7 @@ BYTE FillList(BYTE* map, BYTE vlvCnt)
     {
         for (j = 0; j < 4; j++)
             newId.bVal[j] = ComBuf[bufIdx++];   
-        if ((newId.lVal > 500000) && (newId.lVal < 5000000))
+        if ((newId.lVal > 500000) && (newId.lVal < 50000000))
         {
             //insert each valve  
             vlvIndex = InsertVlv(newId.lVal);
@@ -1760,7 +1760,8 @@ char UpdateParam()
             }
         break;  
         case UPDATE_VLV_LST:       
-            g_bVlvListUpdated = true;   
+            g_bVlvListUpdated = true;     
+            g_bSendList = TRUE;
             res = UpdateVlvList();
         break; 
         case UPDATE_CBU_CNFG2:      

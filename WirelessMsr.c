@@ -443,7 +443,8 @@ bool MeasureMain()
              if (/*(nCycles > 3) ||*/  (nBadAnswer > 10) ||(nNoDataCnt > 60))       // todo - check if need
              {
                 ResetEZR();     
-                nNoDataCnt = 0;
+                nNoDataCnt = 0;   
+                nBadAnswer = 0;
              }
             break;
         default:

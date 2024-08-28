@@ -146,7 +146,22 @@
 27/06/2024  instead of 99:99 as start now sign, if get -99 as cycles it a sign to start now or extend current irrigation. in that case - instead of getting start 
             time app gets end time and calc duration from it.
             same for both valves & pumps.
-            U.6.24.24
+            U.6.24.24			
+02/07/2024  fix bug of stop irrigation - when gets -99 cycles and duration is 0 - do not calc duration by end time but leave it 0.
+            U.7.24.20             
+            fix calculation of stop time - add function CalcStopTime that calculate stop time. use it when gets the command, unless gets stop time.
+            U.7.24.21  
+09/07/2024  fix bug of stop irrigation - when gets -99 cycles and duration is 0 -set d0 to duration.
+            U.7.24.22
+16/07/2024  fix bug of start pump even if doesnt have command.
+            U.7.24.23              
+28/08/2028	1. when gets task of update vcu list - turn on flag g_bSendList to send list back to server.
+			2. allow gets VCU id until 50 million (not 5...)
+			3. replace next command for pump - object instead of pointer.
+            4. if pump gets new command during pulse irrigation while it on - replace to new command when current pulse finishes. (new command prior next cycle)
+			5. init badAnswer after reset EZR
+			U.8.24.30
+     
             
             
              
