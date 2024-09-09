@@ -177,7 +177,10 @@
             4. do not close pump if status doesnt fit
             U.8.24.24     
 27/08/2024  set different API for EZR FOTA & CBU FOTA.
-            U.8.24.25 
+            U.8.24.25      
+04/09/2024  fix for sending duration to CBU.  (CheckPumpStatus) (NOT SURE IT MUST)
+            U.9.24.20
+            
              
             
             

@@ -242,23 +242,21 @@ void CheckPumpStatus()
     SendDebugMsg("\r\nIsPump Open ");     
     PrintNum(pumpAsVlv[i].IsPumpOpen);
     #endif          
-        if (pumpAsVlv[i].IsPumpOpen == FALSE)   
-        {
-            if (pumpAsVlv[i].IsCmd4Pump == TRUE)
-            {                     
-                tmp = IsTimeStartIrg(pumpAsVlv[i].cmdData.startTime);   
+        if (pumpAsVlv[i].IsCmd4Pump == TRUE)
+        {                     
+            tmp = IsTimeStartIrg(pumpAsVlv[i].cmdData.startTime);   
 
-                #ifdef DebugMode 
-                SendDebugMsg("\r\nSec 2 start pump \0");     
-                PrintNum(tmp);  
-                #endif DebugMode
-                if (tmp == 1) //(tmp < 60)               
-                {                            
-                    OpenPumpCmd(i);    
-                }     
-            }           
-        }     
-        else
+            #ifdef DebugMode 
+            SendDebugMsg("\r\nSec 2 start pump \0");     
+            PrintNum(tmp);  
+            #endif DebugMode
+            if (tmp == 1) //(tmp < 60)               
+            {                            
+                OpenPumpCmd(i);    
+            }     
+        }      
+                 
+        if (pumpAsVlv[i].IsPumpOpen == TRUE)   
         {        
             t = GetLaterTimestamp(g_curTime, pumpAsVlv[i].stopTimeStamp);  
             #ifdef DebugMode   
@@ -312,6 +310,13 @@ BYTE SetPumpCmd(unsigned int dur, BYTE offTime, BYTE cycles, BYTE startHour, BYT
         t1.hour = pumpAsVlv[pumpIdx].stopTimeStamp.hour;
         t1.minute = pumpAsVlv[pumpIdx].stopTimeStamp.minute;        
         n2 = CalcScndsToStart(t1); 
+        #ifdef DebugMode  
+        SendDebugMsg("\r\nSec 2 start next\0");     
+        PrintNum(n1);
+        SendDebugMsg("\r\nSec 2 stop cur \0");     
+        PrintNum(n2);
+        
+        #endif DebugMode 
         // if it later -        
         if (n1 > n2)
             bIsNextIrg = TRUE;  

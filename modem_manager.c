@@ -223,7 +223,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',8, YEAR, 25};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',9, YEAR, 20};   //__BUILD__
 
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
