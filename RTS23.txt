@@ -160,7 +160,10 @@
 			3. replace next command for pump - object instead of pointer.
             4. if pump gets new command during pulse irrigation while it on - replace to new command when current pulse finishes. (new command prior next cycle)
 			5. init badAnswer after reset EZR
-			U.8.24.30
+			U.8.24.30   
+09/09/2024  for continual connection (not after reset, when minutely interrupt is on) - 1. set ModemResponse to TASK_COMPLETE.
+            2. if hasnt manage to connect for 30 minutes - start from beginning.  
+            U.9.24.21
      
             
             

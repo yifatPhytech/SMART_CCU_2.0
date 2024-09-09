@@ -30,7 +30,7 @@ extern BYTE monitorCurTask;
 extern BYTE bMonitorConnected;
 extern BYTE msrCurTask;
 extern BYTE modemCurTask;
-extern BYTE g_nTime2StartAT;
+//extern BYTE g_nTime2StartAT;
 extern BYTE bEndOfCbuTask;
 extern BYTE nRegDenied;
 extern BYTE btrStatus;

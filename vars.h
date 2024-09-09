@@ -47,9 +47,8 @@ BYTE btrStatus;
 PUMP_CMD g_PumpCmdNow;
 //BYTE g_cmdSndCnt;
 BYTE    g_bAfterModem;
-BYTE g_nTime2StartAT;
+//BYTE g_nTime2StartAT;
 unsigned char powerOnReset;
-DateTime g_LastCnctTime;
 char DataBlock[MAX_DATA_2_EPRM_SIZE];
 volatile unsigned char eepromReadBuf[MAX_DATA_2_EPRM_SIZE];  //SENSOR_CNTRL_PRM_SIZE];	//buffer for eeprom read operation
 char ComBuf[MAX_RX1_BUF_LEN]; // buffer for transmit (TX)

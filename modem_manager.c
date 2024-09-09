@@ -162,7 +162,6 @@ extern bit bReset;
 extern unsigned int rx0_buff_len;
 BYTE rssi_val;
 BYTE UpdatePrmArr[MAX_PRM_TASKS];
-extern DateTime g_LastCnctTime;
 extern char DataBlock[];
 extern char clockBuf[7]; 		 //buffer for all clock operation need
 extern char ComBuf[MAX_RX1_BUF_LEN];
@@ -183,7 +182,7 @@ eeprom _tagBLEEPROM BlEepromData = {0};
 eeprom _tagPortDefEEPROM ComponentArray[MAX_PORTS_CBU] @0x300;
 eeprom _tagFlowDefEEPROM FlowDef[2] @0x200;
 extern volatile BYTE mainTask;
-extern BYTE g_nTime2StartAT;
+//extern BYTE g_nTime2StartAT;
 
 #ifdef SMART_SERVER  
 char tmpBuf[45];
@@ -210,6 +209,7 @@ BYTE taskAfterDelay;
 char prevID[4];
 BYTE numOprt = 0;
 BYTE curOprtIndex;
+unsigned int g_continuesCnct = 0;
 extern unsigned int nEzrFw2Upg;
 extern unsigned int nCBUFw2Upg;
 
@@ -229,7 +229,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',8, YEAR, 30};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',9, YEAR, 21};   //__BUILD__
 
 extern eeprom _tagAPPEEPROM AppEepromData;
 flash unsigned char fSWUpdatePort[] = "80@"; 
@@ -367,8 +367,9 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
 
     if (prevMainTask != TASK_MODEM)   
     {   
-        if ((bExtReset == TRUE) || /*(vlvSentOK == FALSE) ||*/ (s == FALSE) || (g_bModemConnect == FALSE)) 
-        {
+        if ((bExtReset == TRUE) || /*(vlvSentOK == FALSE) ||*/ (s == FALSE) || (g_bModemConnect == FALSE) || (g_continuesCnct > 30)) 
+        {        
+            g_continuesCnct = 0;
             modemCurTask = TASK_NONE;     
 //            fGetCopsLst = FALSE;      
             MODEM_PWR_ENABLE(); 
@@ -388,14 +389,16 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
             }
         }                    
     }                  
-     #ifdef DebugMode  
     else
     { 
+        ModemResponse = TASK_COMPLETE;  
+        g_continuesCnct++;
+     #ifdef DebugMode  
         SendDebugMsg("\r\ncontinue modem from last task=\0");      
         PrintNum(modemCurTask); 
         PrintNum(modemCurSubTask);       
-    }           
     #endif DebugMode
+    }           
     bEndOfModemTask = FALSE;
     bConnectOK = FALSE;
 //    dataSentOK = FALSE;
@@ -410,7 +413,7 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
     ENABLE_UART1(); 
     UART1Select(UART_DBG); 
     #endif  LiteDebug   
-    g_nTime2StartAT = 130;  
+//    g_nTime2StartAT = 130;  
     nCBUFw2Upg = 0;     
     nEzrFw2Upg = 0;
 }
@@ -2246,7 +2249,8 @@ void ParseModemResponse()
             {                           
                 HandleLed(LED_3, CBU_LED_ON);
                 ModemResponse = TASK_COMPLETE;
-                g_bModemConnect = TRUE;
+                g_bModemConnect = TRUE;   
+                g_continuesCnct = 0;
 //                nConnectError = 0;
             }
 //            else
@@ -2622,7 +2626,6 @@ BYTE GetNextTask()
                                 taskAfterDelay = SUB_TASK_INIT_MODEM_REG_LTE; 
                             else
                                 taskAfterDelay = SUB_TASK_INIT_MODEM_REG;//SUB_TASK_INIT_MODEM_REG_STAT;
-//                            taskAfterDelay = SUB_TASK_INIT_MODEM_REG_LTE;//SUB_TASK_INIT_MODEM_REG;
                         break;        
                         case SUB_TASK_INIT_MODEM_COPS_4_MONITOR: 
                             modemCurSubTask = SUB_TASK_INIT_MODEM_REG;
@@ -2704,9 +2707,6 @@ BYTE GetNextTask()
                         break;
                         case SUB_TASK_MODEM_CONNECT_START_DIAL:   
                             bConnectOK = TRUE;
-                            // save last connecting time 
-                            GetRealTime();
-                            g_LastCnctTime = g_curTime;  
                             nErrorOnConnect = 0; 
                             // if its connecting without logger ID (monitor) - shutdown now 
                             if (IsZeroID(AppEepromData.eLoggerID))

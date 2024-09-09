@@ -64,8 +64,8 @@ extern bit bWaitForModemAnswer;
 extern bit bWaitForMonitorCmd;
 extern bit bWait4WLSensor;
 BYTE g_fRS485Call;
-extern BYTE g_nTime2StartAT;
-extern BYTE g_nTime2StartAT;
+//extern BYTE g_nTime2StartAT;
+//extern BYTE g_nTime2StartAT;
 BYTE flgUart1Error;
 unsigned int nCntDown;
 //extern unsigned int    g_OneMntCnt;
@@ -101,8 +101,8 @@ interrupt [TIM1_COMPA] void timer1_compa_isr(void)
     {
          nTimeCnt--;
     }      
-    if (g_nTime2StartAT > 0)
-        g_nTime2StartAT--; 
+//    if (g_nTime2StartAT > 0)
+//        g_nTime2StartAT--; 
      
     if (TimeLeftForWaiting > 0)
     {

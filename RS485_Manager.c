@@ -36,7 +36,6 @@ extern BYTE msrCurTask;
 extern int BytesToSend;
 extern int nTimeCnt;
 extern char ComBuf[MAX_RX1_BUF_LEN];
-extern DateTime g_LastCnctTime;
 extern int iVoltage;
 extern BYTE rssi_val;
 
