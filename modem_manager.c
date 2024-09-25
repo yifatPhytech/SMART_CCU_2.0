@@ -178,6 +178,7 @@ BYTE prmUpdtIndex;
 BYTE taskAfterDelay;
 BYTE nRegDenied = 0;
 BYTE fMdmAns;
+BYTE g_continuesCnct;
 int  bufIndexToUpd;
 int nMaxWaitingTime;
 static Ulong_bytes newId;
@@ -223,7 +224,7 @@ flash unsigned char YEAR = YEAR_T + 100;
 #else
 flash unsigned char YEAR = YEAR_T;
 #endif
-flash unsigned char RomVersion[4] = {'U',9, YEAR, 20};   //__BUILD__
+flash unsigned char RomVersion[4] = {'U',9, YEAR, 23};   //__BUILD__
 
 flash unsigned char fSWUpdatePort[] = "80@"; 
 flash unsigned char fSWUpdateAddress[] = "bootloader.phytech.com@";
@@ -270,7 +271,7 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
 
     if (prevMainTask != TASK_MODEM)   
     {   
-        if ((bExtReset == TRUE) || /*(vlvSentOK == FALSE) ||*/ (s == FALSE) || (g_bModemConnect == FALSE)) 
+        if ((bExtReset == TRUE) || (s == FALSE) || (g_bModemConnect == FALSE) || (g_continuesCnct >= 30)) 
         {
             modemCurTask = TASK_NONE;     
 //            fGetCopsLst = FALSE;      
@@ -293,7 +294,9 @@ void InitVarsForConnecting(/*BYTE b4Vlv*/)
     }                  
     else
     {         
-        bWaitForModemAnswer = FALSE;
+        bWaitForModemAnswer = FALSE;   
+        ModemResponse = TASK_COMPLETE;
+        g_continuesCnct++;
      #ifdef DebugMode  
         SendDebugMsg("\r\ncontinue modem from last task=\0");      
         PrintNum(modemCurTask); 
@@ -2610,7 +2613,8 @@ BYTE GetNextTask()
                         case SUB_TASK_MODEM_CONNECT_START_DIAL:   
                             bConnectOK = TRUE;
                             // save last connecting time 
-                            GetRealTime();
+                            GetRealTime();       
+                            g_continuesCnct = 0;
 //                            g_LastCnctTime = g_curTime;  
                             nErrorOnConnect = 0; 
                             // if its connecting without logger ID (monitor) - shutdown now 

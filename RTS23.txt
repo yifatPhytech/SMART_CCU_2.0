@@ -179,7 +179,9 @@
 27/08/2024  set different API for EZR FOTA & CBU FOTA.
             U.8.24.25      
 04/09/2024  fix for sending duration to CBU.  (CheckPumpStatus) (NOT SURE IT MUST)
-            U.9.24.20
+            U.9.24.20                       
+25/09/2024  SendGetSWUpdate - change AT_GET_SW_STATUS_CBU to espstatus
+            U.9.24.23
             
              
             

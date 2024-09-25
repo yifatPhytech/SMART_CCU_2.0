@@ -52,7 +52,7 @@ flash unsigned char AT_POST_TITLE_CNFRMVLV[] = "POST /api/sensor/sensorvlvcmdcon
 flash unsigned char AT_GET_SW_STATUS_3[] = "GET http://@";  
 flash unsigned char AT_GET_SW_STATUS_ATM[] = "/status/@";  //  
 flash unsigned char AT_GET_SW_STATUS_EZR[] = "/rfstatus/@";  //  
-flash unsigned char AT_GET_SW_STATUS_CBU[] = "/cbustatus/@";  //  
+flash unsigned char AT_GET_SW_STATUS_CBU[] = "/espstatus/@";  //  
 flash unsigned char AT_GET_SW_STATUS_2[] = " HTTP/1.1\r\n@"; 
 flash unsigned char AT_POST_CONN[] = "Connection: keep-alive\r\n#";                     //24
 flash unsigned char AT_POST_TYPE[] = "Content-Type: multipart/form-data; boundary=#";   //52
